@@ -1,0 +1,48 @@
+{
+  "name": "all-package-names",
+  "version": "1.0.0",
+  "description": "Get all NPM package names.",
+  "main": "./build/index.js",
+  "author": "Connor White <connor.bcw@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/bconnorwhite/all-package-names.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bconnorwhite/all-package-names.git"
+  },
+  "keywords": [
+    "get",
+    "all",
+    "the",
+    "npm",
+    "package",
+    "packges",
+    "name",
+    "names",
+    "typo",
+    "squatting",
+    "api"
+  ],
+  "bin": {
+    "all-package-names": "./build/bin/index.js"
+  },
+  "scripts": {
+    "build": "bob build",
+    "prepublishOnly": "yarn build && yarn sync",
+    "sync": "node ./build/bin/index.js sync",
+    "test": "node ./build/bin/index.js"
+  },
+  "dependencies": {
+    "@bconnorwhite/module": "^1.0.6",
+    "commander": "^6.1.0",
+    "parse-json-object": "^1.0.4",
+    "progress": "^2.0.3",
+    "read-json-safe": "^1.0.4",
+    "write-json-safe": "^1.0.0"
+  },
+  "devDependencies": {
+    "@bconnorwhite/bob": "^1.9.7",
+    "@types/node": "^14.6.2",
+    "@types/progress": "^2.0.3"
+  }
+}
