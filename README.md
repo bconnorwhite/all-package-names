@@ -173,3 +173,5 @@ syncCommand(program);
 ## Related Packages
 - [npm-pd](https://npmjs.com/package/npms-pd): A CLI dashboard for NPM publishers
 - [npms-io-client](https://npmjs.com/package/npms-io-client): Isomorphic typed client for npms.io
+- [package-name-conflict](https://npmjs.com/package/package-name-conflict): Check if NPM package names conflict
+- [is-name-taken](https://npmjs.com/package/is-name-taken): Check if an NPM package name is taken
