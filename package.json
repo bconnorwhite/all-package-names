@@ -1,6 +1,6 @@
 {
   "name": "all-package-names",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Get all NPM package names.",
   "main": "./build/index.js",
   "author": "Connor White <connor.bcw@gmail.com>",
