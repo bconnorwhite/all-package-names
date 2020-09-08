@@ -23,6 +23,9 @@
     "squatting",
     "api"
   ],
+  "files": [
+    "build"
+  ],
   "bin": {
     "all-package-names": "./build/bin/index.js"
   },
