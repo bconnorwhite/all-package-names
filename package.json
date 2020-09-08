@@ -2,9 +2,12 @@
   "name": "all-package-names",
   "version": "1.0.3",
   "description": "Get all NPM package names.",
-  "main": "./build/index.js",
-  "author": "Connor White <connor.bcw@gmail.com>",
   "license": "MIT",
+  "author": {
+    "name": "Connor White",
+    "email": "connor.bcw@gmail.com",
+    "url": "https://connorwhite.org"
+  },
   "homepage": "https://github.com/bconnorwhite/all-package-names.git",
   "repository": {
     "type": "git",
@@ -26,18 +29,18 @@
   "files": [
     "build"
   ],
+  "main": "./build/index.js",
   "bin": {
     "all-package-names": "./build/bin/index.js"
   },
   "scripts": {
     "build": "bob build",
-    "prepublishOnly": "yarn build && yarn sync && git add data",
     "postversion": "git push",
+    "prepublishOnly": "yarn build && yarn sync && git add data",
     "sync": "node ./build/bin/index.js sync",
     "test": "node ./build/bin/index.js"
   },
   "dependencies": {
-    "@bconnorwhite/module": "^1.0.6",
     "commander": "^6.1.0",
     "parse-json-object": "^1.0.5",
     "progress": "^2.0.3",
@@ -45,7 +48,7 @@
     "write-json-safe": "^1.0.1"
   },
   "devDependencies": {
-    "@bconnorwhite/bob": "^1.9.7",
+    "@bconnorwhite/bob": "^2.1.0",
     "@types/node": "^14.6.2",
     "@types/progress": "^2.0.3"
   }

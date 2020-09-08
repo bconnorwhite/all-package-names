@@ -141,7 +141,6 @@ syncCommand(program);
 
 <h2>Dependencies<img align="right" alt="dependencies" src="https://img.shields.io/david/bconnorwhite/all-package-names.svg"></h2>
 
-- [@bconnorwhite/module](https://npmjs.com/package/@bconnorwhite/module): Set commander version based on your module's package.json.
 - [commander](https://npmjs.com/package/commander): The complete solution for node.js command-line programs
 - [parse-json-object](https://www.npmjs.com/package/parse-json-object): Parse a typed JSON object.
 - [progress](https://www.npmjs.com/package/progress): Flexible ascii progress bar
