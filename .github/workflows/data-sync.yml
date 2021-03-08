@@ -1,0 +1,24 @@
+name: Data Sync
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  publish:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - name: Publish
+        run: |
+          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          yarn publish --new-version patch
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
