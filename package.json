@@ -35,7 +35,6 @@
   },
   "scripts": {
     "build": "bob build",
-    "postversion": "git push",
     "prepublishOnly": "yarn build && yarn sync && git add data",
     "sync": "node ./build/bin/index.js sync",
     "test": "node ./build/bin/index.js"

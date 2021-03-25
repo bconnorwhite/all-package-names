@@ -22,3 +22,7 @@ jobs:
           yarn publish --new-version patch
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Commit & Push changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
