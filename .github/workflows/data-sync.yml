@@ -2,7 +2,7 @@ name: Data Sync
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "30 17 * * *"
 
 jobs:
   publish:
@@ -19,6 +19,7 @@ jobs:
       - name: Publish
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          yarn
           yarn publish --new-version patch
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
