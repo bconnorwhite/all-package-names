@@ -1,10 +1,10 @@
 import { request } from "https";
-import parse, { JSONObject } from "parse-json-object";
+import { parseJSONObject, JSONObject } from "parse-json-object";
 import { writeJSON } from "write-json-safe";
 import ProgressBar from "progress";
+import { createCommand } from "commander-version";
 import { load, Save } from "./load";
 import { savePath } from "./";
-import commander from "commander";
 
 type Summary = {
   update_seq: number;
@@ -54,7 +54,7 @@ function getEnd() {
         data += chunk.toString();
       });
       res.on("end", () => {
-        const { update_seq } = parse(data) as Summary;
+        const { update_seq } = parseJSONObject(data) as Summary;
         resolve(update_seq);
       });
     }).end();
@@ -85,7 +85,7 @@ function pump(state: InternalState) {
     if(line.endsWith(",")) {
       line = line.slice(0,line.length-1);
     }
-    const item = parse(line);
+    const item = parseJSONObject(line);
     if(isChange(item)) {
       state.index = item.seq;
       state.packageNames[item.id] = true;
@@ -121,7 +121,7 @@ export function sync({ onData, onStart, onEnd }: SyncOptions = {}) {
               since: state.index,
               packageNames: Object.keys(state.packageNames)
             };
-            writeJSON(savePath, save, false).then(() => {
+            writeJSON(savePath, save, { pretty: false }).then(() => {
               resolve(save);
             });
           });
@@ -141,15 +141,13 @@ export function syncAction() {
       bar.update(state.progress);
     },
     onEnd: (state) => {
-      console.log(`Packages: ${Object.keys(state.packageNames).length}`);
-      console.log(`Time: ${state.elapsed / 1000}s`);
+      console.info(`New packages: ${state.end - state.start}`);
+      console.info(`Total: ${Object.keys(state.packageNames).length}`)
+      console.info(`Time: ${state.elapsed / 1000}s`);
     }
   });
 }
 
-export default function(program: commander.Command) {
-  program
-    .command("sync")
-    .description("Sync latest packages from NPM")
-    .action(syncAction)
-}
+export default createCommand("sync")
+  .description("Sync latest packages from NPM")
+  .action(syncAction)

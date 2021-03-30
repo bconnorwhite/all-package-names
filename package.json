@@ -41,15 +41,16 @@
     "test": "node ./build/bin/index.js"
   },
   "dependencies": {
-    "commander": "^6.1.0",
-    "parse-json-object": "^1.0.5",
+    "@bconnorwhite/package": "^4.2.2",
+    "commander-version": "^1.1.0",
     "progress": "^2.0.3",
-    "read-json-safe": "^1.0.5",
-    "write-json-safe": "^1.0.1"
+    "read-json-safe": "^2.0.2",
+    "types-json": "^1.2.2",
+    "write-json-safe": "^2.0.1"
   },
   "devDependencies": {
-    "@bconnorwhite/bob": "^2.9.2",
-    "@types/node": "^14.6.2",
+    "@bconnorwhite/bob": "^2.9.4",
+    "@types/node": "^14.14.37",
     "@types/progress": "^2.0.3"
   }
 }

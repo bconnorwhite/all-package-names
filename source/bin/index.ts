@@ -1,10 +1,7 @@
 #!/usr/bin/env node
-import { program } from "commander";
-import { version } from "../../package.json";
+import program from "commander-version";
 import { syncCommand } from "../";
 
-syncCommand(program);
-
-program
-  .version(version)
+program(__dirname)
+  .addCommand(syncCommand)
   .parse();
