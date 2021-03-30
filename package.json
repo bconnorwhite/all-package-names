@@ -1,6 +1,6 @@
 {
   "name": "all-package-names",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Get all NPM package names.",
   "license": "MIT",
   "author": {
@@ -27,7 +27,8 @@
     "api"
   ],
   "files": [
-    "build"
+    "build",
+    "data"
   ],
   "main": "./build/index.js",
   "bin": {
@@ -47,7 +48,7 @@
     "write-json-safe": "^1.0.1"
   },
   "devDependencies": {
-    "@bconnorwhite/bob": "^2.1.0",
+    "@bconnorwhite/bob": "^2.9.2",
     "@types/node": "^14.6.2",
     "@types/progress": "^2.0.3"
   }
