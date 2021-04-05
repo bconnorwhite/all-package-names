@@ -9,4 +9,4 @@ export {
   sync,
   syncCommand,
   syncAction
-}
+};

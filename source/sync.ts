@@ -8,11 +8,11 @@ import { savePath } from "./";
 
 type Summary = {
   update_seq: number;
-}
+};
 
 type PackageNames = {
   [name: string]: true;
-}
+};
 
 export type State = {
   start: number; // start index
@@ -30,14 +30,14 @@ type InternalState = {
 type Change = {
   seq: number;
   id: string;
-}
+};
 
 type SyncActionOptions = {
   /**
    * Timeout in milliseconds after a sync to avoid re-syncing
    */
    timeout?: number;
-}
+};
 
 type SyncOptions = {
   onStart?: (state: State) => void;
@@ -45,7 +45,7 @@ type SyncOptions = {
   onEnd?: (state: State) => void;
 } & SyncActionOptions;
 
-const getOptions = (path: string = "") => ({
+const getOptions = (path = "") => ({
   hostname: "replicate.npmjs.com",
   port: 443,
   path,
@@ -88,9 +88,9 @@ function isChange(item?: JSONObject): item is Change {
 function pump(state: InternalState) {
   while(state.data.indexOf("\n") !== state.data.lastIndexOf("\n")) {
     const newline = state.data.indexOf("\n", 1);
-    let line = state.data.slice(0,newline);
+    let line = state.data.slice(0, newline);
     if(line.endsWith(",")) {
-      line = line.slice(0,line.length-1);
+      line = line.slice(0, line.length-1);
     }
     const item = parseJSONObject(line);
     if(isChange(item)) {
@@ -154,7 +154,7 @@ export function syncAction(options?: SyncActionOptions) {
     },
     onEnd: (state) => {
       console.info(`New packages: ${state.end - state.start}`);
-      console.info(`Total: ${Object.keys(state.packageNames).length}`)
+      console.info(`Total: ${Object.keys(state.packageNames).length}`);
       console.info(`Time: ${state.elapsed / 1000}s`);
     },
     timeout: options?.timeout
@@ -164,4 +164,4 @@ export function syncAction(options?: SyncActionOptions) {
 export default createCommand("sync")
   .description("Sync latest packages from NPM")
   .option("-t --timeout [delay]", "timeout in milliseconds after a sync to avoid re-syncing", parseInt)
-  .action(syncAction)
+  .action(syncAction);

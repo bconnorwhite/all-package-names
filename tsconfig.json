@@ -1,5 +1,5 @@
 {
-  "extends": "@bconnorwhite/bob",
+  "extends": "@bconnorwhite/bob/tsconfig",
   "compilerOptions": {
     "rootDirs": [
       "source",

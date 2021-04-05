@@ -1,7 +1,7 @@
 {
   "name": "all-package-names",
   "version": "1.0.17",
-  "description": "Get all NPM package names.",
+  "description": "Get all NPM package names",
   "license": "MIT",
   "author": {
     "name": "Connor White",
@@ -37,6 +37,8 @@
   "scripts": {
     "build": "bob build",
     "commit": "bob commit",
+    "lint": "bob lint",
+    "release": "bob publish",
     "sync": "node ./build/bin/index.js sync",
     "test": "bob test"
   },
@@ -54,5 +56,11 @@
     "@types/node": "^14.14.37",
     "@types/progress": "^2.0.3",
     "mock-fs": "^4.13.0"
+  },
+  "eslintConfig": {
+    "extends": "eslint-config-bob"
+  },
+  "npmpackagejsonlint": {
+    "extends": "npm-package-json-lint-config-bob"
   }
 }

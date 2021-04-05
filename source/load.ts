@@ -6,7 +6,7 @@ export type Save = {
   since: number;
   timestamp: number;
   packageNames: string[];
-}
+};
 
 function isPositiveNumber(value?: JSONValue): value is number {
   return typeof value === "number" && value >= 0;
