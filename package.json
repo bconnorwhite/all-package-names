@@ -43,6 +43,7 @@
   "dependencies": {
     "@bconnorwhite/package": "^4.2.2",
     "commander-version": "^1.1.0",
+    "parse-json-object": "^2.0.1",
     "progress": "^2.0.3",
     "read-json-safe": "^2.0.2",
     "types-json": "^1.2.2",
