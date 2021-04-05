@@ -6,6 +6,9 @@
   <a href="https://github.com/bconnorwhite/all-package-names">
     <img alt="typescript" src="https://img.shields.io/github/languages/top/bconnorwhite/all-package-names.svg">
   </a>
+  <a href='https://coveralls.io/github/bconnorwhite/all-package-names?branch=master'>
+    <img alt="Coverage Status" src="https://img.shields.io/coveralls/github/bconnorwhite/all-package-names.svg?branch=master">
+  </a>
   <a href="https://github.com/bconnorwhite/all-package-names">
     <img alt="GitHub stars" src="https://img.shields.io/github/stars/bconnorwhite/all-package-names?label=Stars%20Appreciated%21&style=social">
   </a>
@@ -147,11 +150,11 @@ syncCommand(program);
 <h2>Dependencies<img align="right" alt="dependencies" src="https://img.shields.io/david/bconnorwhite/all-package-names.svg"></h2>
 
 - [commander-version](https://npmjs.com/package/commander-version): A wrapper for Commander that automatically sets the version based on your package.json
-- [parse-json-object](https://www.npmjs.com/package/parse-json-object): Parse a typed JSON object.
+- [parse-json-object](https://www.npmjs.com/package/parse-json-object): Parse a typed JSON object
 - [progress](https://www.npmjs.com/package/progress): Flexible ascii progress bar
-- [read-json-safe](https://www.npmjs.com/package/read-json-safe): Read objects from JSON files without try catch.
+- [read-json-safe](https://www.npmjs.com/package/read-json-safe): Read JSON files without try catch
 - [types-json](https://www.npmjs.com/package/types-json): Type checking for JSON objects
-- [write-json-safe](https://www.npmjs.com/package/write-json-safe): Write formatted JSON to a file, and create parent directories if necessary.
+- [write-json-safe](https://www.npmjs.com/package/write-json-safe): Write formatted JSON to a file
 
 ##
 
