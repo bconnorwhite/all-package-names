@@ -1983,6 +1983,13 @@
   resolved "https://registry.yarnpkg.com/@types/minimist/-/minimist-1.2.1.tgz#283f669ff76d7b8260df8ab7a4262cc83d988256"
   integrity sha512-fZQQafSREFyuZcdWFAExYjBiCL7AUCdgsk80iO0q4yihYYdcIiH28CcuPTGFgLOCC8RlW49GSQxdHwZP+I7CNg==
 
+"@types/mock-fs@^4.13.0":
+  version "4.13.0"
+  resolved "https://registry.yarnpkg.com/@types/mock-fs/-/mock-fs-4.13.0.tgz#b8b01cd2db588668b2532ecd21b1babd3fffb2c0"
+  integrity sha512-FUqxhURwqFtFBCuUj3uQMp7rPSQs//b3O9XecAVxhqS9y4/W8SIJEZFq2mmpnFVZBXwR/2OyPLE97CpyYiB8Mw==
+  dependencies:
+    "@types/node" "*"
+
 "@types/node@*":
   version "14.6.2"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-14.6.2.tgz#264b44c5a28dfa80198fc2f7b6d3c8a054b9491f"
@@ -6204,6 +6211,11 @@ mkdirp@1.x:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
   integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
+
+mock-fs@^4.13.0:
+  version "4.13.0"
+  resolved "https://registry.yarnpkg.com/mock-fs/-/mock-fs-4.13.0.tgz#31c02263673ec3789f90eb7b6963676aa407a598"
+  integrity sha512-DD0vOdofJdoaRNtnWcrXe6RQbpHkPPmtqGq14uRX0F8ZKJ5nv89CVTYl/BZdppDxBDaV0hl75htg3abpEWlPZA==
 
 modify-values@^1.0.0:
   version "1.0.1"

@@ -14,7 +14,7 @@ type PackageNames = {
   [name: string]: true;
 }
 
-type State = {
+export type State = {
   start: number; // start index
   index: number; // current index
   end: number; // end index
@@ -143,7 +143,7 @@ export function sync({ onData, onStart, onEnd, timeout }: SyncOptions = {}) {
   });
 }
 
-export function syncAction({ timeout }: SyncActionOptions) {
+export function syncAction(options?: SyncActionOptions) {
   let bar: ProgressBar;
   sync({
     onStart: (state) => {
@@ -157,7 +157,7 @@ export function syncAction({ timeout }: SyncActionOptions) {
       console.info(`Total: ${Object.keys(state.packageNames).length}`)
       console.info(`Time: ${state.elapsed / 1000}s`);
     },
-    timeout
+    timeout: options?.timeout
   });
 }
 

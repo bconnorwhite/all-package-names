@@ -20,6 +20,8 @@ jobs:
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
           yarn
+          yarn build
+          yarn sync
           yarn publish --no-git-tag-version --new-version patch
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
