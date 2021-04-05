@@ -36,7 +36,7 @@
   },
   "scripts": {
     "build": "bob build",
-    "prepublishOnly": "yarn build && yarn sync",
+    "prepublishOnly": "yarn build",
     "sync": "node ./build/bin/index.js sync",
     "test": "node ./build/bin/index.js"
   },
