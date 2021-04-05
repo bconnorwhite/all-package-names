@@ -60,7 +60,7 @@ sync().then(({ packageNames }) => {
 ```ts
 load(): Promise<Save>
 
-sync({ onData, onStart, onEnd }: SyncOptions = {}) => Promise<Save>;
+sync({ onData, onStart, onEnd, timeout }: SyncOptions = {}) => Promise<Save>;
 
 type Save = {
   since: number; // last index synced
@@ -71,6 +71,10 @@ type SyncOptions = {
   onStart?: (state: State) => void;
   onData?: (state: State) => void;
   onEnd?: (state: State) => void;
+  /**
+   * Timeout in milliseconds after a sync to avoid re-syncing
+   */
+  timeout?: number;
 }
 
 type State = {
@@ -94,14 +98,14 @@ type PackageNames = {
 ### CLI Usage:
 #### yarn all-package-names --help
 ```
-Usage: index [options] [command]
+Usage: all-package-names [options] [command]
 
 Options:
-  -V, --version   output the version number
+  -v --version    output the version number
   -h, --help      display help for command
 
 Commands:
-  sync            sync packages with latest from NPM
+  sync [options]  Sync latest packages from NPM
   help [command]  display help for command
 ```
 
@@ -113,12 +117,13 @@ Commands:
 #### yarn all-package-names sync --help
 Sync latest packages from NPM.
 ```
-Usage: index sync [options]
+Usage: all-package-names sync [options]
 
 Sync latest packages from NPM
 
 Options:
-  -h, --help  display help for command
+  -t --timeout [delay]  timeout in milliseconds after a sync to avoid re-syncing
+  -h, --help            display help for command
 ```
 
 ##
@@ -141,10 +146,11 @@ syncCommand(program);
 
 <h2>Dependencies<img align="right" alt="dependencies" src="https://img.shields.io/david/bconnorwhite/all-package-names.svg"></h2>
 
-- [commander](https://npmjs.com/package/commander): The complete solution for node.js command-line programs
+- [commander-version](https://npmjs.com/package/commander-version): A wrapper for Commander that automatically sets the version based on your package.json
 - [parse-json-object](https://www.npmjs.com/package/parse-json-object): Parse a typed JSON object.
 - [progress](https://www.npmjs.com/package/progress): Flexible ascii progress bar
 - [read-json-safe](https://www.npmjs.com/package/read-json-safe): Read objects from JSON files without try catch.
+- [types-json](https://www.npmjs.com/package/types-json): Type checking for JSON objects
 - [write-json-safe](https://www.npmjs.com/package/write-json-safe): Write formatted JSON to a file, and create parent directories if necessary.
 
 ##

@@ -32,11 +32,18 @@ type Change = {
   id: string;
 }
 
+type SyncActionOptions = {
+  /**
+   * Timeout in milliseconds after a sync to avoid re-syncing
+   */
+   timeout?: number;
+}
+
 type SyncOptions = {
   onStart?: (state: State) => void;
   onData?: (state: State) => void;
   onEnd?: (state: State) => void;
-}
+} & SyncActionOptions;
 
 const getOptions = (path: string = "") => ({
   hostname: "replicate.npmjs.com",
@@ -95,43 +102,48 @@ function pump(state: InternalState) {
   }
 }
 
-export function sync({ onData, onStart, onEnd }: SyncOptions = {}) {
+export function sync({ onData, onStart, onEnd, timeout }: SyncOptions = {}) {
   const startTime = new Date().getTime();
   return new Promise((resolve: (save: Save) => void) => {
     load().then((save) => {
-      getEnd().then((end) => {
-        const state = initialState(save, end);
-        if(onStart) {
-          onStart(state);
-        }
-        request(getOptions(`/_changes?since=${save.since}`), (res) => {
-          res.on("data", (chunk) => {
-            state.data += chunk.toString();
-            pump(state);
-            state.elapsed = new Date().getTime() - startTime;
-            if(onData) {
-              onData(state);
-            }
-          });
-          res.on("end", () => {
-            if(onEnd) {
-              onEnd(state);
-            }
-            const save: Save = {
-              since: state.index,
-              packageNames: Object.keys(state.packageNames)
-            };
-            writeJSON(savePath, save, { pretty: false }).then(() => {
-              resolve(save);
+      if(timeout !== undefined && save.timestamp + timeout > startTime) {
+        resolve(save);
+      } else {
+        getEnd().then((end) => {
+          const state = initialState(save, end);
+          if(onStart) {
+            onStart(state);
+          }
+          request(getOptions(`/_changes?since=${save.since}`), (res) => {
+            res.on("data", (chunk) => {
+              state.data += chunk.toString();
+              pump(state);
+              state.elapsed = new Date().getTime() - startTime;
+              if(onData) {
+                onData(state);
+              }
             });
-          });
-        }).end();
-      });
+            res.on("end", () => {
+              if(onEnd) {
+                onEnd(state);
+              }
+              const newSave: Save = {
+                since: state.index,
+                timestamp: new Date().getTime(),
+                packageNames: Object.keys(state.packageNames)
+              };
+              writeJSON(savePath, newSave, { pretty: false }).then(() => {
+                resolve(newSave);
+              });
+            });
+          }).end();
+        });
+      }
     });
   });
 }
 
-export function syncAction() {
+export function syncAction({ timeout }: SyncActionOptions) {
   let bar: ProgressBar;
   sync({
     onStart: (state) => {
@@ -144,10 +156,12 @@ export function syncAction() {
       console.info(`New packages: ${state.end - state.start}`);
       console.info(`Total: ${Object.keys(state.packageNames).length}`)
       console.info(`Time: ${state.elapsed / 1000}s`);
-    }
+    },
+    timeout
   });
 }
 
 export default createCommand("sync")
   .description("Sync latest packages from NPM")
+  .option("-t --timeout [delay]", "timeout in milliseconds after a sync to avoid re-syncing", parseInt)
   .action(syncAction)

@@ -1277,7 +1277,7 @@
     read-json-safe "^1.0.1"
     recursive-readdir "^2.2.2"
 
-"@bconnorwhite/package@^4.2.1", "@bconnorwhite/package@^4.2.2":
+"@bconnorwhite/package@^4.2.1":
   version "4.2.2"
   resolved "https://registry.yarnpkg.com/@bconnorwhite/package/-/package-4.2.2.tgz#1863526cc612517275325fa2233796ec0b047349"
   integrity sha512-ie4ngmjw5cwSABHKPBGbD6FSeZnaWHfEM6zIUg2gjE8YGP34oRUMptzKCCHUrz2FkPLTu1LIM2X4ZZEoWI13nQ==

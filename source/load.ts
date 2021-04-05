@@ -1,25 +1,37 @@
-import { readJSON, JSONObject, JSONArray } from "read-json-safe";
+import { readJSON, JSONValue } from "read-json-safe";
 import { isJSONObject } from "types-json";
 import { savePath } from "./";
 
 export type Save = {
   since: number;
+  timestamp: number;
   packageNames: string[];
 }
 
-function isSave(data?: string | number | boolean | JSONObject | JSONArray | null): data is Save {
-  return isJSONObject(data) && typeof data.since === "number" && Array.isArray(data.packageNames);
+function isPositiveNumber(value?: JSONValue): value is number {
+  return typeof value === "number" && value >= 0;
 }
 
-export async function load() {
+function filterStringArray(array: JSONValue[]) {
+  return array.filter((value) => typeof value === "string") as string[];
+}
+
+const saveTemplate: Save = {
+  since: 0,
+  timestamp: 0,
+  packageNames: []
+};
+
+export async function load(): Promise<Save> {
   return readJSON(savePath).then((data) => {
-    if(isSave(data)) {
-      return data;
-    } else {
+    if(isJSONObject(data)) {
       return {
-        since: 0,
-        packageNames: []
-      }
+        since: isPositiveNumber(data.since) ? data.since : saveTemplate.since,
+        timestamp: isPositiveNumber(data.timestamp) ? data.timestamp : saveTemplate.timestamp,
+        packageNames: Array.isArray(data.packageNames) ? filterStringArray(data.packageNames) : saveTemplate.packageNames
+      };
+    } else {
+      return saveTemplate;
     }
   });
 }
