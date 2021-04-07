@@ -1,3 +1,17 @@
+# [2.0.0](https://github.com/bconnorwhite/all-package-names/compare/v1.1.1...v2.0.0) (2021-04-07)
+
+
+### Features
+
+* added maxAge ([cf8c5df](https://github.com/bconnorwhite/all-package-names/commit/cf8c5dfa5ca26fbcc172efb147eb92e2b776523f))
+
+
+### BREAKING CHANGES
+
+* replaced timeout with maxAge
+
+
+
 ## [1.1.1](https://github.com/bconnorwhite/all-package-names/compare/v1.1.0...v1.1.1) (2021-04-05)
 
 
