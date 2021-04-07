@@ -71,11 +71,13 @@ sync({ maxAge: 60000 }).then(({ packageNames }) => {
  console.log(packageNames); // array of all package names on npm
 });
 ```
-#### Types:
+#### Basic Types:
 ```ts
+import { load, sync, LoadOptions, SyncOptions, Save, State, StateHook } from "all-package-names";
+
 function load({ maxAge }: LoadOptions): Promise<Save>
 
-function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) => Promise<Save>;
+function sync({ maxAge }: LoadOptions = {}) => Promise<Save>;
 
 type LoadOptions = {
   /**
@@ -84,29 +86,62 @@ type LoadOptions = {
    maxAge?: number;
 };
 
-type SyncOptions = {
-  onStart?: (state: State) => void;
-  onData?: (state: State) => void;
-  onEnd?: (state: State) => void;
-} & LoadOptions;
-
 type Save = {
-  since: number; // last index synced
+  /**
+   * Index of last package synced
+   */
+  since: number;
+  /**
+   * Timestamp of last sync
+   */
+  timestamp: number;
+  /**
+   * Array of package names
+   */
   packageNames: string[];
 };
 
-type State = {
-  start: number;    // start index
-  index: number;    // current index
-  end: number;      // end index
-  progress: number; // percent of sync completed
-  elapsed: number;  // milliseconds since sync began
-  packageNames: PackageNames;
-};
+```
+#### State Hooks:
+```ts
+import { sync, LoadOptions, SyncOptions, Save, State, StateHook } from "all-package-names";
 
-type PackageNames = {
-  [name: string]: true;
-}
+function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) => Promise<Save>;
+
+type SyncOptions = {
+  onStart?: StateHook;
+  onData?: StateHook;
+  onEnd?: StateHook;
+} & LoadOptions;
+
+type StateHook = (state: State) => void;
+
+type State = {
+  /**
+   * Starting package sync index
+   */
+  start: number;
+  /**
+   * Current package sync index
+   */
+  index: number;
+  /**
+   * Ending package sync index
+   */
+  end: number;
+  /**
+   * Percentage of sync completed
+   */
+  progress: number;
+  /**
+   * Milliseconds since sync began
+   */
+  elapsed: number;
+  /**
+   * Set of package names that have been added
+   */
+  packageNames: Set<string>;
+};
 ```
 
 ##

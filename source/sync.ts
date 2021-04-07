@@ -9,17 +9,31 @@ type Summary = {
   update_seq: number;
 };
 
-type PackageNames = {
-  [name: string]: true;
-};
-
 export type State = {
-  start: number; // start index
-  index: number; // current index
-  end: number; // end index
-  progress: number; // percent of sync completed
-  elapsed: number; // milliseconds since sync started
-  packageNames: PackageNames;
+  /**
+   * Starting package sync index
+   */
+  start: number;
+  /**
+   * Current package sync index
+   */
+  index: number;
+  /**
+   * Ending package sync index
+   */
+  end: number;
+  /**
+   * Percentage of sync completed
+   */
+  progress: number;
+  /**
+   * Milliseconds since sync began
+   */
+  elapsed: number;
+  /**
+   * Set of package names that have been added
+   */
+  packageNames: Set<string>;
 };
 
 type InternalState = {
@@ -31,9 +45,9 @@ type Change = {
   id: string;
 };
 
-type StateHook = (state: State) => void;
+export type StateHook = (state: State) => void;
 
-type SyncOptions = {
+export type SyncOptions = {
   onStart?: StateHook;
   onData?: StateHook;
   onEnd?: StateHook;
@@ -69,10 +83,7 @@ const initialState = ({ since, packageNames }: Save, end: number): InternalState
   end,
   progress: 0,
   elapsed: 0,
-  packageNames: packageNames.reduce((retval, name) => {
-    retval[name] = true;
-    return retval;
-  }, {} as PackageNames)
+  packageNames: new Set(packageNames)
 });
 
 function isChange(item?: JSONObject): item is Change {
@@ -89,7 +100,7 @@ function pump(state: InternalState) {
     const item = parseJSONObject(line);
     if(isChange(item)) {
       state.index = item.seq;
-      state.packageNames[item.id] = true;
+      state.packageNames.add(item.id);
       state.progress = (state.index - state.start) / (state.end - state.start);
     }
     state.data = state.data.slice(newline);
@@ -128,7 +139,7 @@ export function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) {
                 const newSave: Save = {
                   since: state.index,
                   timestamp: new Date().getTime(),
-                  packageNames: Object.keys(state.packageNames)
+                  packageNames: Array.from(state.packageNames.values())
                 };
                 save(newSave).then(() => {
                   release();

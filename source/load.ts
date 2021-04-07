@@ -4,8 +4,17 @@ import { isJSONObject } from "types-json";
 import { savePath } from "./";
 
 export type Save = {
+  /**
+   * Index of last package synced
+   */
   since: number;
+  /**
+   * Timestamp of last sync
+   */
   timestamp: number;
+  /**
+   * Array of package names
+   */
   packageNames: string[];
 };
 
