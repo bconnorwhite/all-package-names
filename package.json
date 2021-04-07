@@ -39,16 +39,18 @@
     "commit": "bob commit",
     "lint": "bob lint",
     "release": "bob publish",
-    "sync": "node ./build/bin/index.js sync",
+    "start": "node ./build/bin/index.js",
+    "sync": "yarn start sync",
     "test": "bob test"
   },
   "dependencies": {
     "commander-version": "^1.1.0",
+    "p-lock": "^2.0.0",
     "parse-json-object": "^2.0.1",
     "progress": "^2.0.3",
     "read-json-safe": "^2.0.2",
     "types-json": "^1.2.2",
-    "write-json-safe": "^2.0.1"
+    "write-json-safe": "^2.0.2"
   },
   "devDependencies": {
     "@bconnorwhite/bob": "^2.9.4",
@@ -59,6 +61,11 @@
   },
   "eslintConfig": {
     "extends": "eslint-config-bob"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "bob lint commit"
+    }
   },
   "npmpackagejsonlint": {
     "extends": "npm-package-json-lint-config-bob"

@@ -1,6 +1,6 @@
 import { test, expect } from "@jest/globals";
 import { exec } from "child_process";
-import { sync, load, syncAction } from "../source";
+import { sync, syncAction, load } from "../source";
 import { State } from "../source/sync";
 
 test("sync", (done) => {
@@ -10,18 +10,42 @@ test("sync", (done) => {
     expect(Array.isArray(save.packageNames)).toBe(true);
     done?.();
   });
-}, 60000);
+}, 30000);
 
-test("sync timeout", (done) => {
+test("sync max age", (done) => {
   sync().then((save1) => {
-    sync({ timeout: 100000 }).then((save2) => {
+    sync({ maxAge: 30000 }).then((save2) => {
       expect(save1.since).toBe(save2.since);
       expect(save1.timestamp).toBe(save2.timestamp);
       expect(save1.packageNames.length).toBe(save2.packageNames.length);
       done?.();
     });
   });
-}, 60000);
+}, 30000);
+
+test("sync sequential", (done) => {
+  sync();
+  sync().then((save) => {
+    expect(typeof save.since).toBe("number");
+    expect(typeof save.timestamp).toBe("number");
+    expect(Array.isArray(save.packageNames)).toBe(true);
+    done?.();
+  });
+}, 30000);
+
+test("sync max age parallel", (done) => {
+  setTimeout(() => {
+    Promise.all([
+      sync({ maxAge: 9000 }),
+      sync({ maxAge: 9000 })
+    ]).then(([save1, save2]) => {
+      expect(save1.since).toEqual(save2.since);
+      expect(save1.timestamp).toEqual(save2.timestamp);
+      expect(save1.packageNames.length).toEqual(save2.packageNames.length);
+      done?.();
+    });
+  }, 10000);
+}, 30000);
 
 test("sync with hooks", (done) => {
   sync({
@@ -40,7 +64,7 @@ test("sync with hooks", (done) => {
     expect(Array.isArray(save.packageNames)).toBe(true);
     done?.();
   });
-}, 60000);
+}, 30000);
 
 test("sync action", (done) => {
   let counter = 0;
@@ -54,7 +78,7 @@ test("sync action", (done) => {
     }
   };
   syncAction();
-}, 60000);
+}, 30000);
 
 test("cli", (done) => {
   exec("node ./build/bin/index.js sync", (error, stdout, stderr) => {
@@ -63,7 +87,7 @@ test("cli", (done) => {
     expect(typeof stderr).toBe("string");
     done?.();
   });
-}, 60000);
+}, 30000);
 
 test("load", (done) => {
   load().then((save) => {
@@ -71,5 +95,16 @@ test("load", (done) => {
     expect(typeof save.timestamp).toBe("number");
     expect(Array.isArray(save.packageNames)).toBe(true);
     done?.();
+  });
+});
+
+test("load max age", (done) => {
+  load().then((save1) => {
+    load({ maxAge: 30000 }).then((save2) => {
+      expect(save1.since).toBe(save2.since);
+      expect(save1.timestamp).toBe(save2.timestamp);
+      expect(save1.packageNames.length).toBe(save2.packageNames.length);
+      done?.();
+    });
   });
 });

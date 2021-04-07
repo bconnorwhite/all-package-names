@@ -58,27 +58,42 @@ load().then(({ packageNames }) => {
 sync().then(({ packageNames }) => {
  console.log(packageNames); // array of all package names on npm
 });
+
+// Load with a maxAge of 1 minute
+
+load({ maxAge: 60000 }).then(({ packageNames }) => {
+  console.log(packageNames); // array of all package names on npm
+});
+
+// Sync with a maxAge of 1 minute
+
+sync({ maxAge: 60000 }).then(({ packageNames }) => {
+ console.log(packageNames); // array of all package names on npm
+});
 ```
 #### Types:
 ```ts
-load(): Promise<Save>
+function load({ maxAge }: LoadOptions): Promise<Save>
 
-sync({ onData, onStart, onEnd, timeout }: SyncOptions = {}) => Promise<Save>;
+function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) => Promise<Save>;
 
-type Save = {
-  since: number; // last index synced
-  packageNames: string[];
-}
+type LoadOptions = {
+  /**
+   * Maximum milliseconds after a sync to avoid re-syncing
+   */
+   maxAge?: number;
+};
 
 type SyncOptions = {
   onStart?: (state: State) => void;
   onData?: (state: State) => void;
   onEnd?: (state: State) => void;
-  /**
-   * Timeout in milliseconds after a sync to avoid re-syncing
-   */
-  timeout?: number;
-}
+} & LoadOptions;
+
+type Save = {
+  since: number; // last index synced
+  packageNames: string[];
+};
 
 type State = {
   start: number;    // start index
@@ -125,8 +140,8 @@ Usage: all-package-names sync [options]
 Sync latest packages from NPM
 
 Options:
-  -t --timeout [delay]  timeout in milliseconds after a sync to avoid re-syncing
-  -h, --help            display help for command
+  -m --max-age [milliseconds]  Maximum milliseconds after a sync to avoid re-syncing
+  -h, --help                   display help for command
 ```
 
 ##

@@ -6638,6 +6638,11 @@ p-locate@^5.0.0:
   dependencies:
     p-limit "^3.0.2"
 
+p-lock@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/p-lock/-/p-lock-2.0.0.tgz#04bf81ce040f9669cbb4eab297d52ee75a8aa32c"
+  integrity sha512-suad0a3DcVDYFenGxiTksqLKXnfwMsL677qfbHJKajeUe1PFHQ/TEqsszydwCL1P5lqWDIk+mmhXsaqQegFHlw==
+
 p-try@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/p-try/-/p-try-1.0.0.tgz#cbc79cdbaf8fd4228e13f621f2b1a237c1b207b3"
@@ -7939,7 +7944,7 @@ stringify-json-object@^1.0.4:
   dependencies:
     "@bconnorwhite/json-types" "^1.0.5"
 
-stringify-json-object@^1.0.5, stringify-json-object@^1.0.6:
+stringify-json-object@^1.0.5, stringify-json-object@^1.0.7:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/stringify-json-object/-/stringify-json-object-1.0.7.tgz#7c5592c0c85aa247d104c3a27f5e70c67ce22ca6"
   integrity sha512-swTYj+6RL1e4a6whybHPSw+/7X54fyEKbK/fK6uL81PMHohHawfpZDwtFU49vw/Mey6j19m9emN1YA2VE4aCog==
@@ -8764,7 +8769,7 @@ write-file-atomic@^3.0.0:
     signal-exit "^3.0.2"
     typedarray-to-buffer "^3.1.5"
 
-write-file-safe@^1.0.2, write-file-safe@^1.2.1, write-file-safe@^1.2.2:
+write-file-safe@^1.0.2, write-file-safe@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/write-file-safe/-/write-file-safe-1.2.2.tgz#f90659f09c59617a2be742ef21a6841f2ba4934f"
   integrity sha512-UcpxUj37t7Di3SQIy7cvGgf0Dn2YmmpBaUekuVmB3UNzyFUfwZI4sfFo3TolK8Wx9DxmnaUXPaeBF7Y/CQzfmA==
@@ -8777,6 +8782,15 @@ write-file-safe@^1.0.3:
   resolved "https://registry.yarnpkg.com/write-file-safe/-/write-file-safe-1.0.3.tgz#6e259879617da395a641296d459e13d3ea36575f"
   integrity sha512-bdAWuzoYTLhVmAvKU7MIy2tWUs6afawPrOaktl6YBGk28LRh5RphDLDAqoXXe2j9ZvLeh+fAblnhQ6wZ0hd+iQ==
 
+write-file-safe@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/write-file-safe/-/write-file-safe-1.2.3.tgz#d998bee7893f04c0be0380b045ad7a6dddb6c615"
+  integrity sha512-hHjxdVZYFDK/S1zEzEJ8kbVmMt5cNpClVZCKPOghxmf5dgK1WUUPF4xyuCyjpCuxDN2MNJ511U23RsEanMbBQA==
+  dependencies:
+    p-lock "^2.0.0"
+    terminating-newline "^1.2.4"
+    write-dir-safe "^1.0.0"
+
 write-json-safe@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/write-json-safe/-/write-json-safe-1.0.1.tgz#9d381de54133383f6fd01319e77fc407f58bfd6e"
@@ -8785,13 +8799,13 @@ write-json-safe@^1.0.0:
     stringify-json-object "^1.0.4"
     write-file-safe "^1.0.3"
 
-write-json-safe@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/write-json-safe/-/write-json-safe-2.0.1.tgz#5a42aa36666f2bcaf6a520e6dfd57a9619c059ba"
-  integrity sha512-hZSQgTb/IXmFSN2b7to1rEXwEP1HJ7DyEgcOOeIwfWIyLSFgrH95PEVEBvhVfVKS98yAJkaimogZUFoqV4CbAA==
+write-json-safe@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/write-json-safe/-/write-json-safe-2.0.2.tgz#ae3c18a4734726b6cb2dca7717c360fd83564756"
+  integrity sha512-XLt3Pyrqk8PnSn/MfwGY9pEu9lRRFIgCdv/B/E0iRvE4GhgJVf4oJgKwyJJ+oqk7hKrJO9fNJbBeZ+JDWXX4bg==
   dependencies:
-    stringify-json-object "^1.0.6"
-    write-file-safe "^1.2.1"
+    stringify-json-object "^1.0.7"
+    write-file-safe "^1.2.3"
 
 write-md-safe@^1.0.3:
   version "1.1.0"

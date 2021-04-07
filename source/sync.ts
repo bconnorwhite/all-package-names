@@ -1,10 +1,9 @@
 import { request } from "https";
-import { parseJSONObject, JSONObject } from "parse-json-object";
-import { writeJSON } from "write-json-safe";
+import { getLock } from "p-lock";
 import ProgressBar from "progress";
+import { parseJSONObject, JSONObject } from "parse-json-object";
 import { createCommand } from "commander-version";
-import { load, Save } from "./load";
-import { savePath } from "./";
+import { load, save, isFresh, Save, LoadOptions } from "./load";
 
 type Summary = {
   update_seq: number;
@@ -32,18 +31,13 @@ type Change = {
   id: string;
 };
 
-type SyncActionOptions = {
-  /**
-   * Timeout in milliseconds after a sync to avoid re-syncing
-   */
-   timeout?: number;
-};
+type StateHook = (state: State) => void;
 
 type SyncOptions = {
-  onStart?: (state: State) => void;
-  onData?: (state: State) => void;
-  onEnd?: (state: State) => void;
-} & SyncActionOptions;
+  onStart?: StateHook;
+  onData?: StateHook;
+  onEnd?: StateHook;
+} & LoadOptions;
 
 const getOptions = (path = "") => ({
   hostname: "replicate.npmjs.com",
@@ -68,14 +62,14 @@ function getEnd() {
   });
 }
 
-const initialState = (save: Save, end: number): InternalState => ({
+const initialState = ({ since, packageNames }: Save, end: number): InternalState => ({
   data: "",
-  start: save.since,
-  index: save.since,
+  start: since,
+  index: since,
   end,
   progress: 0,
   elapsed: 0,
-  packageNames: save.packageNames.reduce((retval, name) => {
+  packageNames: packageNames.reduce((retval, name) => {
     retval[name] = true;
     return retval;
   }, {} as PackageNames)
@@ -102,48 +96,54 @@ function pump(state: InternalState) {
   }
 }
 
-export function sync({ onData, onStart, onEnd, timeout }: SyncOptions = {}) {
+const lock = getLock();
+
+export function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) {
   const startTime = new Date().getTime();
-  return new Promise((resolve: (save: Save) => void) => {
-    load().then((save) => {
-      if(timeout !== undefined && save.timestamp + timeout > startTime) {
-        resolve(save);
-      } else {
-        getEnd().then((end) => {
-          const state = initialState(save, end);
-          if(onStart) {
-            onStart(state);
-          }
-          request(getOptions(`/_changes?since=${save.since}`), (res) => {
-            res.on("data", (chunk) => {
-              state.data += chunk.toString();
-              pump(state);
-              state.elapsed = new Date().getTime() - startTime;
-              if(onData) {
-                onData(state);
-              }
-            });
-            res.on("end", () => {
-              if(onEnd) {
-                onEnd(state);
-              }
-              const newSave: Save = {
-                since: state.index,
-                timestamp: new Date().getTime(),
-                packageNames: Object.keys(state.packageNames)
-              };
-              writeJSON(savePath, newSave, { pretty: false }).then(() => {
-                resolve(newSave);
+  return new Promise((resolve: (data: Save) => void) => {
+    lock().then((release) => {
+      load({ maxAge }).then((data) => {
+        if(isFresh(data, maxAge)) {
+          release();
+          resolve(data);
+        } else {
+          getEnd().then((end) => {
+            const state = initialState(data, end);
+            if(onStart) {
+              onStart(state);
+            }
+            request(getOptions(`/_changes?since=${data.since}`), (res) => {
+              res.on("data", (chunk) => {
+                state.data += chunk.toString();
+                pump(state);
+                state.elapsed = new Date().getTime() - startTime;
+                if(onData) {
+                  onData(state);
+                }
               });
-            });
-          }).end();
-        });
-      }
+              res.on("end", () => {
+                if(onEnd) {
+                  onEnd(state);
+                }
+                const newSave: Save = {
+                  since: state.index,
+                  timestamp: new Date().getTime(),
+                  packageNames: Object.keys(state.packageNames)
+                };
+                save(newSave).then(() => {
+                  release();
+                  resolve(newSave);
+                });
+              });
+            }).end();
+          });
+        }
+      });
     });
   });
 }
 
-export function syncAction(options?: SyncActionOptions) {
+export function syncAction(options?: LoadOptions) {
   let bar: ProgressBar;
   sync({
     onStart: (state) => {
@@ -157,11 +157,11 @@ export function syncAction(options?: SyncActionOptions) {
       console.info(`Total: ${Object.keys(state.packageNames).length}`);
       console.info(`Time: ${state.elapsed / 1000}s`);
     },
-    timeout: options?.timeout
+    maxAge: options?.maxAge
   });
 }
 
 export default createCommand("sync")
   .description("Sync latest packages from NPM")
-  .option("-t --timeout [delay]", "timeout in milliseconds after a sync to avoid re-syncing", parseInt)
+  .option("-m --max-age [milliseconds]", "Maximum milliseconds after a sync to avoid re-syncing", parseInt)
   .action(syncAction);
