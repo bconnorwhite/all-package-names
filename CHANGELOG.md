@@ -1,3 +1,12 @@
+## [2.0.1](https://github.com/bconnorwhite/all-package-names/compare/v2.0.0...v2.0.1) (2021-04-07)
+
+
+### Bug Fixes
+
+* improve type exports ([b1eade5](https://github.com/bconnorwhite/all-package-names/commit/b1eade55b80d2846c394211fce3aed2118969915))
+
+
+
 # [2.0.0](https://github.com/bconnorwhite/all-package-names/compare/v1.1.1...v2.0.0) (2021-04-07)
 
 
