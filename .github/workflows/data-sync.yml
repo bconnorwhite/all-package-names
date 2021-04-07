@@ -2,7 +2,7 @@ name: Data Sync
 
 on:
   schedule:
-    - cron: "30 17 * * *"
+    - cron: "0 0 * * *"
 
 jobs:
   publish:
