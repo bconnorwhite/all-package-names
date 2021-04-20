@@ -1,6 +1,6 @@
 {
   "name": "all-package-names",
-  "version": "2.0.13",
+  "version": "2.0.14",
   "description": "Get all NPM package names",
   "license": "MIT",
   "author": {
