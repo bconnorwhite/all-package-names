@@ -22,7 +22,7 @@ jobs:
           yarn
           yarn build
           yarn sync
-          yarn publish --no-git-tag-version --new-version patch
+          yarn publish --new-version patch
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Commit & Push changes
