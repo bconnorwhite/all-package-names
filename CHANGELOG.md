@@ -1,3 +1,12 @@
+## [2.0.119](https://github.com/bconnorwhite/all-package-names/compare/v2.0.1...v2.0.119) (2021-08-14)
+
+
+### Bug Fixes
+
+* fix issue syncing with no new packages ([1ba34f2](https://github.com/bconnorwhite/all-package-names/commit/1ba34f2e6cb6ac21d9bf27203b201ef7a62b6730))
+
+
+
 ## [2.0.1](https://github.com/bconnorwhite/all-package-names/compare/v2.0.0...v2.0.1) (2021-04-07)
 
 
