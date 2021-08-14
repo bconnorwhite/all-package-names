@@ -1,6 +1,5 @@
 import { test, expect } from "@jest/globals";
-import { exec } from "child_process";
-import { sync, syncAction, load } from "../source";
+import { sync, load } from "../source";
 import { State } from "../source/sync";
 
 test("sync", (done) => {
@@ -62,29 +61,6 @@ test("sync with hooks", (done) => {
     expect(typeof save.since).toBe("number");
     expect(typeof save.timestamp).toBe("number");
     expect(Array.isArray(save.packageNames)).toBe(true);
-    done?.();
-  });
-}, 30000);
-
-test("sync action", (done) => {
-  let counter = 0;
-  const prefixes = ["New packages: ", "Total: ", "Time: "];
-  console.info = (text: string) => {
-    expect(text.substring(0, prefixes[counter].length)).toBe(prefixes[counter]);
-    if(counter < 2) {
-      counter += 1;
-    } else {
-      done?.();
-    }
-  };
-  syncAction();
-}, 30000);
-
-test("cli", (done) => {
-  exec("node ./build/bin/index.js sync", (error, stdout, stderr) => {
-    expect(error).toBe(null);
-    expect(typeof stdout).toBe("string");
-    expect(typeof stderr).toBe("string");
     done?.();
   });
 }, 30000);

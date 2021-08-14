@@ -155,13 +155,15 @@ export function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) {
 }
 
 export function syncAction(options?: LoadOptions) {
-  let bar: ProgressBar;
+  let bar: ProgressBar | undefined;
   sync({
     onStart: (state) => {
-      bar = new ProgressBar("syncing [:bar] :percent ", { total: state.end - state.start });
+      if(state.end > state.start) {
+        bar = new ProgressBar("syncing [:bar] :percent ", { total: state.end - state.start });
+      }
     },
     onData: (state) => {
-      bar.update(state.progress);
+      bar?.update(state.progress);
     },
     onEnd: (state) => {
       console.info(`New packages: ${state.end - state.start}`);

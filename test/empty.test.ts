@@ -5,6 +5,8 @@ import { load } from "../source";
 beforeEach(async () => {
   mock({
     "./data": {}
+  }, {
+    createCwd: false
   });
 });
 
