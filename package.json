@@ -53,7 +53,7 @@
     "write-json-safe": "^2.0.2"
   },
   "devDependencies": {
-    "@bconnorwhite/bob": "^2.9.4",
+    "@bconnorwhite/bob": "^2.9.5",
     "@types/mock-fs": "^4.13.0",
     "@types/node": "^14.14.37",
     "@types/progress": "^2.0.3",

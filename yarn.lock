@@ -1170,10 +1170,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@bconnorwhite/bob@^2.9.4":
-  version "2.9.4"
-  resolved "https://registry.yarnpkg.com/@bconnorwhite/bob/-/bob-2.9.4.tgz#ab219628ace8b66de73ca59b0ff5319da0650fa5"
-  integrity sha512-PEvhuTzSOGiU13DvUzeFWG7ZD0hQYeamsKRd+DcV0c+2+XTu/ei1Y/4FGLiezIdFouc8YNsL93InqT22hS7c1g==
+"@bconnorwhite/bob@^2.9.5":
+  version "2.9.5"
+  resolved "https://registry.yarnpkg.com/@bconnorwhite/bob/-/bob-2.9.5.tgz#6980c01fd8a2a484bebed9a3f9b09cfea51d8312"
+  integrity sha512-Od3uneSEL55v9YobA48F8npEwT9f531C3Vq3hPS6dG5FaPxJAcC4CrnQHf7rD1XeoD5C4EvyG65Ozs7reaeP2A==
   dependencies:
     "@babel/cli" "^7.11.6"
     "@babel/core" "^7.11.6"
