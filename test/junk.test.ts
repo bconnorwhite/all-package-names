@@ -5,7 +5,7 @@ import { load } from "../source";
 beforeEach(async () => {
   mock({
     "./data": {
-      "all.json": "{}"
+      "all.json.gz": "{}"
     }
   });
 });

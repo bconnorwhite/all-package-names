@@ -34,6 +34,10 @@ export type State = {
    * Set of package names that have been added
    */
   packageNames: Set<string>;
+  /**
+   * Milliseconds since last save
+   */
+  lastSave: number;
 };
 
 type InternalState = {
@@ -83,6 +87,7 @@ const initialState = ({ since, packageNames }: Save, end: number): InternalState
   end,
   progress: 0,
   elapsed: 0,
+  lastSave: new Date().getTime(),
   packageNames: new Set(packageNames)
 });
 
@@ -130,6 +135,15 @@ export function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) {
                 state.elapsed = new Date().getTime() - startTime;
                 if(onData) {
                   onData(state);
+                }
+                if(new Date().getTime() - state.lastSave > 60000) {
+                  state.lastSave = new Date().getTime();
+                  const newSave: Save = {
+                    since: state.index,
+                    timestamp: new Date().getTime(),
+                    packageNames: Array.from(state.packageNames.values())
+                  };
+                  save(newSave);
                 }
               });
               res.on("end", () => {

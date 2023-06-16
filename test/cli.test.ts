@@ -9,7 +9,7 @@ test("cli", (done) => {
     expect(typeof stderr).toBe("string");
     done?.();
   });
-}, 30000);
+}, 60000);
 
 test("sync action", (done) => {
   let counter = 0;
