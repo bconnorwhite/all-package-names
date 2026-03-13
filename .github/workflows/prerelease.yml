@@ -1,0 +1,158 @@
+name: Prerelease
+
+on:
+  workflow_dispatch:
+    inputs:
+      preid:
+        description: Prerelease channel
+        required: true
+        type: choice
+        options:
+          - alpha
+          - beta
+          - rc
+        default: rc
+      bump:
+        description: Advance to the next prerelease version
+        required: true
+        type: boolean
+        default: false
+      rebuild:
+        description: Rebuild package names from npm changes before publishing
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Checkout main branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download current release assets
+        if: inputs.rebuild
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node ./scripts/download-latest-release.mjs
+
+      - name: Advance prerelease version
+        if: inputs.bump
+        run: npm version prerelease --preid ${{ inputs.preid }} --no-git-tag-version
+
+      - name: Validate prerelease channel
+        id: prerelease
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          CHANNEL=$(node -e "const version=require('./package.json').version; const match=version.match(/-(alpha|beta|rc)\\./); if(match===null){process.exit(1);} console.log(match[1]);")
+          if [ "${{ inputs.bump }}" = "false" ] && [ "$CHANNEL" != "${{ inputs.preid }}" ]; then
+            echo "::error::Current version channel ($CHANNEL) does not match requested preid (${{ inputs.preid }})"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild names data
+        if: inputs.rebuild
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run sync
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Run coverage
+        run: npm run coverage
+
+      - name: Get version and tag
+        id: version
+        run: |
+          TAG="v${{ steps.prerelease.outputs.version }}"
+          echo "version=${{ steps.prerelease.outputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tag exists
+        run: |
+          git fetch --tags
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::Tag ${{ steps.version.outputs.tag }} already exists"
+            exit 1
+          fi
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create prerelease commit
+        run: |
+          git add package.json package-lock.json
+          git add -f data
+          git commit --allow-empty -m "${{ steps.version.outputs.tag }}"
+
+      - name: Get release commit SHA
+        id: release_commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Pack release artifact
+        id: pack
+        run: echo "file=$(npm pack)" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        run: git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
+
+      - name: Push commit and tag
+        run: |
+          git push origin HEAD:main
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ github.token }}
+          git-branch: main
+          git-commit: ${{ steps.release_commit.outputs.sha }}
+          file: coverage/lcov.info
+          fail-on-error: false
+
+      - name: Publish prerelease to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --tag next
+
+      - name: Create GitHub prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "./${{ steps.pack.outputs.file }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes \
+            --prerelease

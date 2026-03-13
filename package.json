@@ -1,73 +1,85 @@
 {
   "name": "all-package-names",
-  "version": "2.0.896",
-  "description": "Get all NPM package names",
+  "version": "3.0.0-rc.0",
+  "description": "Fast lookup and iteration over all NPM package names",
   "license": "MIT",
+  "private": false,
   "author": {
     "name": "Connor White",
-    "email": "connor.bcw@gmail.com",
-    "url": "https://connorwhite.org"
+    "email": "oss@bconnorwhite.com",
+    "url": "https://bconnorwhite.com"
   },
-  "homepage": "https://connorwhite.org/github/all-package-names.git",
+  "homepage": "https://github.bconnorwhite.com/all-package-names#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bconnorwhite/all-package-names.git"
   },
+  "bugs": "https://github.com/bconnorwhite/all-package-names/issues",
   "keywords": [
     "get",
     "all",
     "the",
     "npm",
     "package",
-    "packges",
+    "packages",
     "name",
     "names",
-    "typo",
-    "squatting",
     "api"
   ],
+  "type": "module",
+  "main": "./build/index.js",
+  "exports": {
+    ".": "./build/index.js"
+  },
+  "types": "./build/index.d.ts",
   "files": [
-    "build",
+    "build/**/!(tsconfig.tsbuildinfo)",
     "data"
   ],
-  "main": "./build/index.js",
-  "bin": {
-    "all-package-names": "./build/bin/index.js"
+  "engines": {
+    "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "bob build",
-    "commit": "bob commit",
-    "lint": "bob lint",
-    "release": "bob publish",
-    "start": "node ./build/bin/index.js",
-    "sync": "yarn start sync",
-    "test": "bob test"
+    "bench": "npm run build && node ./benchmark/bench.js",
+    "bootstrap": "node ./scripts/bootstrap-from-release.mjs",
+    "build": "rimraf ./build && tsc --project ./tsconfig.json",
+    "coverage": "c8 --reporter=text --reporter=lcovonly node --test ./test/*.test.ts",
+    "lint": "npm run lint:package && npm run lint:source",
+    "lint:package": "npmPkgJsonLint .",
+    "lint:source": "ESLINT_USE_FLAT_CONFIG=false eslint src test --ext .ts",
+    "prepack": "npm run build",
+    "sync": "npm run build && node ./scripts/sync.mjs",
+    "test": "node --test ./test/*.test.ts",
+    "typecheck": "npm run build && tsc --project ./test/tsconfig.json"
   },
   "dependencies": {
-    "commander-version": "^1.1.0",
-    "p-lock": "^2.0.0",
-    "parse-json-object": "^2.0.1",
-    "progress": "^2.0.3",
-    "types-json": "^1.2.2"
+    "file-exists-safe": "^3.0.0",
+    "p-lock": "^4.0.0",
+    "read-json-safe": "^3.0.0",
+    "tar": "^7.4.3"
   },
   "devDependencies": {
-    "@bconnorwhite/bob": "^2.9.5",
+    "@bconnorwhite/eslint-config": "^1.0.0",
+    "@bconnorwhite/tsconfig": "^1.0.0",
     "@types/mock-fs": "^4.13.1",
-    "@types/node": "^14.14.37",
-    "@types/progress": "^2.0.3",
-    "jest": "^29.5.0",
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "c8": "^10.1.3",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-json": "^4.0.1",
     "mock-fs": "^5.0.0",
-    "ts-jest": "^29.1.0"
+    "npm-package-json-lint": "^9.1.0",
+    "npm-package-json-lint-config-bconnorwhite": "^1.0.0",
+    "rimraf": "^6.1.3",
+    "tinybench": "^6.0.0",
+    "typescript": "^5.9.3"
   },
   "eslintConfig": {
-    "extends": "eslint-config-bob"
-  },
-  "husky": {
-    "hooks": {
-      "commit-msg": "bob lint commit"
-    }
+    "extends": "@bconnorwhite/eslint-config"
   },
   "npmpackagejsonlint": {
-    "extends": "npm-package-json-lint-config-bob"
+    "extends": "npm-package-json-lint-config-bconnorwhite/oss"
   }
 }
