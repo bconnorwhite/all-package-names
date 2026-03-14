@@ -34,18 +34,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          fetch-tags: false
+          filter: blob:none
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
-
-      - name: Checkout main branch
-        run: |
-          git fetch origin main
-          git checkout main
 
       - name: Install dependencies
         run: npm ci
@@ -114,8 +112,7 @@ jobs:
 
       - name: Fail if tag exists
         run: |
-          git fetch --tags
-          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+          if git ls-remote --exit-code --tags origin "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
             echo "::error::Tag ${{ steps.version.outputs.tag }} already exists"
             exit 1
           fi
