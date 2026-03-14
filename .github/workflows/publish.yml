@@ -1,6 +1,8 @@
 name: Publish
 
 on:
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       bump:
@@ -37,7 +39,7 @@ jobs:
           fetch-depth: 1
           fetch-tags: false
           filter: blob:none
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -48,52 +50,77 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Resolve publish settings
+        id: config
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "bump=patch" >> "$GITHUB_OUTPUT"
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "bump=${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
+            echo "rebuild=${{ inputs.rebuild }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Restore current release package
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build && node ./build/bin/index.js bootstrap --release current
 
       - name: Bump stable version
-        if: inputs.bump == 'patch' || inputs.bump == 'minor' || inputs.bump == 'major'
-        run: npm version ${{ inputs.bump }} --no-git-tag-version
+        if: steps.config.outputs.bump == 'patch' || steps.config.outputs.bump == 'minor' || steps.config.outputs.bump == 'major'
+        run: npm version ${{ steps.config.outputs.bump }} --no-git-tag-version
 
       - name: Bump prerelease version
-        if: inputs.bump == 'alpha' || inputs.bump == 'beta' || inputs.bump == 'rc'
-        run: npm version prerelease --preid ${{ inputs.bump }} --no-git-tag-version
+        if: steps.config.outputs.bump == 'alpha' || steps.config.outputs.bump == 'beta' || steps.config.outputs.bump == 'rc'
+        run: npm version prerelease --preid ${{ steps.config.outputs.bump }} --no-git-tag-version
 
       - name: Validate release version
         id: version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          RELEASE_KIND=$(node -e "const version=require('./package.json').version; console.log(version.includes('-') ? 'prerelease' : 'stable');")
-          if [ "${{ inputs.bump }}" = "none" ]; then
-            if [ "$RELEASE_KIND" = "prerelease" ]; then
-              CHANNEL=$(node -e "const version=require('./package.json').version; const match=version.match(/-(alpha|beta|rc)\\./); if(match===null){process.exit(1);} console.log(match[1]);")
-              echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
-            else
-              echo "channel=stable" >> "$GITHUB_OUTPUT"
+          BRANCH="${GITHUB_REF_NAME}"
+          VERSION=$(npx pkgv)
+          if printf '%s' "$VERSION" | grep -q -- '-'; then
+            RELEASE_KIND="prerelease"
+            CHANNEL=$(printf '%s' "$VERSION" | sed -nE 's/^[^-]+-(alpha|beta|rc)\..*/\1/p')
+            if [ -z "$CHANNEL" ]; then
+              echo "::error::Could not determine prerelease channel from version $VERSION"
+              exit 1
             fi
-          elif [ "${{ inputs.bump }}" = "patch" ] || [ "${{ inputs.bump }}" = "minor" ] || [ "${{ inputs.bump }}" = "major" ]; then
+          else
+            RELEASE_KIND="stable"
+            CHANNEL="stable"
+          fi
+          if [ "${{ steps.config.outputs.bump }}" = "none" ]; then
+            echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.config.outputs.bump }}" = "patch" ] || [ "${{ steps.config.outputs.bump }}" = "minor" ] || [ "${{ steps.config.outputs.bump }}" = "major" ]; then
             if printf '%s' "$VERSION" | grep -q -- '-'; then
               echo "::error::Stable bump produced a prerelease version: $VERSION"
               exit 1
             fi
             echo "channel=stable" >> "$GITHUB_OUTPUT"
           else
-            CHANNEL=$(node -e "const version=require('./package.json').version; const match=version.match(/-(alpha|beta|rc)\\./); if(match===null){process.exit(1);} console.log(match[1]);")
-            if [ "$CHANNEL" != "${{ inputs.bump }}" ]; then
-              echo "::error::Current version channel ($CHANNEL) does not match requested channel (${{ inputs.bump }})"
+            if [ "$CHANNEL" != "${{ steps.config.outputs.bump }}" ]; then
+              echo "::error::Current version channel ($CHANNEL) does not match requested channel (${{ steps.config.outputs.bump }})"
               exit 1
             fi
             echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
           fi
+          if [ "$RELEASE_KIND" = "stable" ] && [ "$BRANCH" != "main" ]; then
+            echo "::error::Stable publishes must run from main, got $BRANCH"
+            exit 1
+          fi
+          if [ "$RELEASE_KIND" = "prerelease" ] && [ "$BRANCH" = "main" ]; then
+            echo "::error::Prerelease publishes must run from a non-main branch"
+            exit 1
+          fi
           TAG="v${VERSION}"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
           echo "release_kind=${RELEASE_KIND}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Rebuild names data
-        if: inputs.rebuild
+        if: steps.config.outputs.rebuild == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run sync
@@ -142,14 +169,14 @@ jobs:
 
       - name: Push commit and tag
         run: |
-          git push origin HEAD:main
+          git push origin HEAD:${{ steps.version.outputs.branch }}
           git push origin "${{ steps.version.outputs.tag }}"
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ github.token }}
-          git-branch: main
+          git-branch: ${{ steps.version.outputs.branch }}
           git-commit: ${{ steps.release_commit.outputs.sha }}
           file: coverage/lcov.info
           fail-on-error: false
