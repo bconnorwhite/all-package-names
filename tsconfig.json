@@ -1,17 +1,16 @@
 {
-  "extends": "@bconnorwhite/bob/tsconfig",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@bconnorwhite/tsconfig/node",
   "compilerOptions": {
+    "outDir": "build",
+    "rootDir": "src",
     "rootDirs": [
-      "source",
-      "types"
+      "src"
     ],
-    "typeRoots": [
-      "node_modules/@types",
-      "types"
-    ]
+    "rewriteRelativeImportExtensions": true
   },
-  "include": [
-    "source",
-    "types"
+  "files": [
+    "src/index.ts",
+    "src/bin/index.ts"
   ]
 }

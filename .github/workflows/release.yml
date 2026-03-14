@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        type: choice
+        options:
+          - none
+          - patch
+          - minor
+          - major
+        default: patch
+      rebuild:
+        description: Rebuild package names from npm changes before publishing
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Checkout main branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore current release package
+        if: inputs.rebuild
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build && node ./build/bin/index.js bootstrap --release current
+
+      - name: Bump version
+        if: inputs.bump != 'none'
+        run: npm version ${{ inputs.bump }} --no-git-tag-version
+
+      - name: Validate stable version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if printf '%s' "$VERSION" | grep -q -- '-'; then
+            echo "::error::Release workflow requires a stable version, got $VERSION"
+            exit 1
+          fi
+
+      - name: Rebuild names data
+        if: inputs.rebuild
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run sync
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Run coverage
+        run: npm run coverage
+
+      - name: Get version and tag
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tag exists
+        run: |
+          git fetch --tags
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::Tag ${{ steps.version.outputs.tag }} already exists"
+            exit 1
+          fi
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release commit
+        run: |
+          git add package.json package-lock.json
+          git add -f data
+          git commit --allow-empty -m "${{ steps.version.outputs.tag }}"
+
+      - name: Get release commit SHA
+        id: release_commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Pack release artifact
+        id: pack
+        run: echo "file=$(npm pack)" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        run: git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
+
+      - name: Push commit and tag
+        run: |
+          git push origin HEAD:main
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ github.token }}
+          git-branch: main
+          git-commit: ${{ steps.release_commit.outputs.sha }}
+          file: coverage/lcov.info
+          fail-on-error: false
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --tag latest
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "./${{ steps.pack.outputs.file }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes

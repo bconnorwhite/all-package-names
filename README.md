@@ -1,235 +1,175 @@
-<div align="center">
+<!--BEGIN HEADER-->
+<div id="top" align="center">
   <h1>all-package-names</h1>
   <a href="https://npmjs.com/package/all-package-names">
-    <img alt="npm" src="https://img.shields.io/npm/v/all-package-names.svg">
+    <img alt="NPM" src="https://img.shields.io/npm/v/all-package-names.svg">
   </a>
   <a href="https://github.com/bconnorwhite/all-package-names">
-    <img alt="typescript" src="https://img.shields.io/github/languages/top/bconnorwhite/all-package-names.svg">
+    <img alt="TypeScript" src="https://img.shields.io/github/languages/top/bconnorwhite/all-package-names.svg">
   </a>
-  <a href='https://coveralls.io/github/bconnorwhite/all-package-names?branch=master'>
-    <img alt="Coverage Status" src="https://img.shields.io/coveralls/github/bconnorwhite/all-package-names.svg?branch=master">
-  </a>
-  <a href="https://github.com/bconnorwhite/all-package-names">
-    <img alt="GitHub stars" src="https://img.shields.io/github/stars/bconnorwhite/all-package-names?label=Stars%20Appreciated%21&style=social">
-  </a>
-  <a href="https://twitter.com/bconnorwhite">
-    <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/bconnorwhite.svg?label=%40bconnorwhite&style=social">
+  <a href="https://coveralls.io/github/bconnorwhite/all-package-names?branch=main">
+    <img alt="Coverage Status" src="https://img.shields.io/coveralls/github/bconnorwhite/all-package-names.svg?branch=main">
   </a>
 </div>
 
 <br />
 
-> Get all NPM package names.
+<blockquote align="center">Fast lookup and iteration over all NPM package names</blockquote>
 
-Includes a JSON file of all NPM package names at the time of last publish, but also allows for syncing with latest packages.
+---
+<!--END HEADER-->
 
+Includes a list of all package names on NPM. Updated daily, with optional local synchronization.
+
+Packages which are deleted from NPM are removed from this list.
+
+<!-- BEGIN INSTALLATION -->
 ## Installation
 
-```bash
+<details open>
+  <summary>
+    <a href="https://www.npmjs.com/package/all-package-names">
+      <img src="https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white" alt="NPM" />
+    </a>
+  </summary>
+
+```sh
+npm install all-package-names
+```
+
+</details>
+
+<details>
+  <summary>
+    <a href="https://yarnpkg.com/package/all-package-names">
+      <img src="https://img.shields.io/badge/yarn-2C8EBB?logo=yarn&logoColor=white" alt="Yarn" />
+    </a>
+  </summary>
+
+```sh
 yarn add all-package-names
 ```
 
-```bash
-npm install all-package-names
+</details>
+
+<details>
+  <summary>
+    <img src="https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white" alt="PNPM" />
+  </summary>
+
+```sh
+pnpm add all-package-names
 ```
+
+</details>
+
+<details>
+  <summary>
+    <img src="https://img.shields.io/badge/bun-EE81C3?logo=bun&logoColor=white" alt="Bun" />
+  </summary>
+
+```sh
+bun add all-package-names
+```
+
+</details>
+<!-- END INSTALLATION -->
+
+## Usage
+
+> Uses binary search on the underlying dataset to quickly check for existence or iterate over packages with a given prefix without having to load the entire list into memory. However, the full list can also be loaded as a string array.
+
 ## API
-- [Programmatic Usage](#Programmatic-Usage)
-- [CLI Usage](#CLI-Usage)
-  - [all-package-names sync](#Sync)
-- [Commander Plugins](#Commander-Plugins)
 
-##
-
-<br />
-
-### Programmatic Usage:
+Check if a package exists without loading the full array:
 
 ```ts
-import { load, sync } from "all-package-names";
+import allPackageNames from "all-package-names";
 
-// Load from an existing sync (included on install)
-
-load().then(({ packageNames }) => {
-  console.log(packageNames); // array of all package names on npm
-});
-
-// Sync and return new package names
-
-sync().then(({ packageNames }) => {
- console.log(packageNames); // array of all package names on npm
-});
-
-// Load with a maxAge of 1 minute
-
-load({ maxAge: 60000 }).then(({ packageNames }) => {
-  console.log(packageNames); // array of all package names on npm
-});
-
-// Sync with a maxAge of 1 minute
-
-sync({ maxAge: 60000 }).then(({ packageNames }) => {
- console.log(packageNames); // array of all package names on npm
-});
+console.log(await allPackageNames.has("react")); // true
 ```
-#### Basic Types:
+
+Iterate packages by prefix:
+
 ```ts
-import { load, sync, LoadOptions, SyncOptions, Save, State, StateHook } from "all-package-names";
+import allPackageNames from "all-package-names";
 
-function load({ maxAge }: LoadOptions): Promise<Save>
-
-function sync({ maxAge }: LoadOptions = {}) => Promise<Save>;
-
-type LoadOptions = {
-  /**
-   * Maximum milliseconds after a sync to avoid re-syncing
-   */
-   maxAge?: number;
-};
-
-type Save = {
-  /**
-   * Index of last package synced
-   */
-  since: number;
-  /**
-   * Timestamp of last sync
-   */
-  timestamp: number;
-  /**
-   * Array of package names
-   */
-  packageNames: string[];
-};
-
+for await (const name of allPackageNames.iterPrefix("@types/")) {
+  console.log(name);
+}
 ```
-#### State Hooks:
+
+Load all names into memory as a string array:
+
 ```ts
-import { sync, LoadOptions, SyncOptions, Save, State, StateHook } from "all-package-names";
+import allPackageNames from "all-package-names";
 
-function sync({ onData, onStart, onEnd, maxAge }: SyncOptions = {}) => Promise<Save>;
-
-type SyncOptions = {
-  onStart?: StateHook;
-  onData?: StateHook;
-  onEnd?: StateHook;
-} & LoadOptions;
-
-type StateHook = (state: State) => void;
-
-type State = {
-  /**
-   * Starting package sync index
-   */
-  start: number;
-  /**
-   * Current package sync index
-   */
-  index: number;
-  /**
-   * Ending package sync index
-   */
-  end: number;
-  /**
-   * Percentage of sync completed
-   */
-  progress: number;
-  /**
-   * Milliseconds since sync began
-   */
-  elapsed: number;
-  /**
-   * Set of package names that have been added
-   */
-  packageNames: Set<string>;
-};
+const names = await allPackageNames.toArray();
 ```
 
-##
+Refresh the local files from the npm replication feed:
 
-<br />
+```ts
+import allPackageNames from "all-package-names";
 
-### CLI Usage:
-#### yarn all-package-names --help
+const result = await allPackageNames.refresh();
+
+console.log(result);
 ```
+
+## CLI
+
+```
+Stream, query, and maintain the all-package-names dataset
+
 Usage: all-package-names [options] [command]
 
 Options:
-  -v --version    output the version number
-  -h, --help      display help for command
+  -p, --prefix [prefix]  Only output package names with this prefix
+  -v, --version          Display version
+  -h, --help             Display help for command
 
 Commands:
-  sync [options]  Sync latest packages from NPM
-  help [command]  display help for command
+  has <name>             Check whether a package name exists
+  sync                   Sync the local dataset from the npm replication feed
+  bootstrap              Restore the local dataset from the latest GitHub release
 ```
 
-##
+Stream every package name, one per line:
 
-<br />
-
-### Sync:
-#### yarn all-package-names sync --help
-Sync latest packages from NPM.
-```
-Usage: all-package-names sync [options]
-
-Sync latest packages from NPM
-
-Options:
-  -m --max-age [milliseconds]  Maximum milliseconds after a sync to avoid re-syncing
-  -h, --help                   display help for command
+```sh
+all-package-names
 ```
 
-##
+Only stream names with a given prefix:
 
-<br />
-
-### Commander Plugins:
-Add all-package-names commands to any commander program:
-```ts
-import { program } from "commander";
-import { syncCommand } from "all-package-names";
-
-syncCommand(program);
+```sh
+all-package-names --prefix @types/
 ```
 
-##
+This is useful for piping to other programs, for example:
 
-<br />
+```sh
+all-package-names --prefix @types/ | grep react
+```
 
+**has**
 
-<h2>Dependencies<img align="right" alt="dependencies" src="https://img.shields.io/david/bconnorwhite/all-package-names.svg"></h2>
+Check whether a package exists with the `has` subcommand:
 
-- [commander-version](https://npmjs.com/package/commander-version): A wrapper for Commander that automatically sets the version based on your package.json
-- [parse-json-object](https://www.npmjs.com/package/parse-json-object): Parse a typed JSON object
-- [progress](https://www.npmjs.com/package/progress): Flexible ascii progress bar
-- [read-json-safe](https://www.npmjs.com/package/read-json-safe): Read JSON files without try catch
-- [types-json](https://www.npmjs.com/package/types-json): Type checking for JSON objects
-- [write-json-safe](https://www.npmjs.com/package/write-json-safe): Write formatted JSON to a file
+```sh
+all-package-names has react
+```
 
-##
+<!--BEGIN FOOTER-->
+<h2 id="license">License <a href="https://opensource.org/licenses/MIT"><img align="right" alt="license" src="https://img.shields.io/npm/l/all-package-names.svg"></a></h2>
 
-<br />
+[MIT](https://opensource.org/licenses/MIT) - _MIT License_
+<!--END FOOTER-->
 
-<h2>Dev Dependencies<img align="right" alt="David" src="https://img.shields.io/david/dev/bconnorwhite/all-package-names.svg"></h2>
-
-- [@bconnorwhite/bob](https://npmjs.com/package/@bconnorwhite/bob): Bob builds and watches typescript projects.
-- [@types/node](https://npmjs.com/package/@types/node): TypeScript definitions for Node.js
-- [@types/progress](https://npmjs.com/package/@types/progress): TypeScript definitions for node-progress
-
-##
-
-<br />
-
-<h2>License <img align="right" alt="license" src="https://img.shields.io/npm/l/all-package-names.svg"></h2>
-
-[MIT](https://mit-license.org/)
-
-##
-
-<br />
 
 ## Related Packages
-- [npm-pd](https://npmjs.com/package/npms-pd): A CLI dashboard for NPM publishers
-- [npms-io-client](https://npmjs.com/package/npms-io-client): Isomorphic typed client for npms.io
 - [package-name-conflict](https://npmjs.com/package/package-name-conflict): Check if NPM package names conflict
 - [is-name-taken](https://npmjs.com/package/is-name-taken): Check if an NPM package name is taken
+- [npms-io-client](https://npmjs.com/package/npms-io-client): Isomorphic typed client for npms.io
+- [npm-pd](https://npmjs.com/package/npms-pd): A CLI dashboard for NPM publishers
