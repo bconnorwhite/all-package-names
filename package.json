@@ -54,6 +54,7 @@
     "release": "npm publish",
     "sync": "npm run build && node ./build/bin/index.js sync",
     "test": "tsx --test ./test/*.test.ts",
+    "test:pack": "npm run build && npm_config_cache=/tmp/all-package-names-npm-cache node ./scripts/test-pack.mjs",
     "typecheck": "npm run build && tsc --project ./test/tsconfig.json"
   },
   "dependencies": {

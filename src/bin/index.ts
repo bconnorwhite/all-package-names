@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* eslint-disable import/no-relative-parent-imports */
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import clee, { parseString } from "clee";
 import ora from "ora";
@@ -114,6 +115,11 @@ const cli = clee("all-package-names")
 
 export default cli;
 
-if(process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+const executedPath = process.argv[1];
+const resolvedExecutedUrl = executedPath === undefined
+  ? undefined
+  : pathToFileURL(realpathSync(executedPath)).href;
+
+if(resolvedExecutedUrl === import.meta.url) {
   await cli.parse();
 }
