@@ -16,7 +16,7 @@ on:
         description: Advance to the next prerelease version
         required: true
         type: boolean
-        default: false
+        default: true
       rebuild:
         description: Rebuild package names from npm changes before publishing
         required: true

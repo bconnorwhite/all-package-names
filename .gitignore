@@ -4,3 +4,4 @@ build
 coverage
 data
 node_modules
+all-package-names-*.tgz

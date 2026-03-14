@@ -1,18 +1,21 @@
-name: Release
+name: Publish
 
 on:
   workflow_dispatch:
     inputs:
       bump:
-        description: Version bump type
+        description: Version bump
         required: true
         type: choice
         options:
           - none
+          - alpha
+          - beta
+          - rc
           - patch
           - minor
           - major
-        default: patch
+        default: none
       rebuild:
         description: Rebuild package names from npm changes before publishing
         required: true
@@ -24,7 +27,7 @@ permissions:
   id-token: write
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -52,17 +55,44 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build && node ./build/bin/index.js bootstrap --release current
 
-      - name: Bump version
-        if: inputs.bump != 'none'
+      - name: Bump stable version
+        if: inputs.bump == 'patch' || inputs.bump == 'minor' || inputs.bump == 'major'
         run: npm version ${{ inputs.bump }} --no-git-tag-version
 
-      - name: Validate stable version
+      - name: Bump prerelease version
+        if: inputs.bump == 'alpha' || inputs.bump == 'beta' || inputs.bump == 'rc'
+        run: npm version prerelease --preid ${{ inputs.bump }} --no-git-tag-version
+
+      - name: Validate release version
+        id: version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          if printf '%s' "$VERSION" | grep -q -- '-'; then
-            echo "::error::Release workflow requires a stable version, got $VERSION"
-            exit 1
+          RELEASE_KIND=$(node -e "const version=require('./package.json').version; console.log(version.includes('-') ? 'prerelease' : 'stable');")
+          if [ "${{ inputs.bump }}" = "none" ]; then
+            if [ "$RELEASE_KIND" = "prerelease" ]; then
+              CHANNEL=$(node -e "const version=require('./package.json').version; const match=version.match(/-(alpha|beta|rc)\\./); if(match===null){process.exit(1);} console.log(match[1]);")
+              echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
+            else
+              echo "channel=stable" >> "$GITHUB_OUTPUT"
+            fi
+          elif [ "${{ inputs.bump }}" = "patch" ] || [ "${{ inputs.bump }}" = "minor" ] || [ "${{ inputs.bump }}" = "major" ]; then
+            if printf '%s' "$VERSION" | grep -q -- '-'; then
+              echo "::error::Stable bump produced a prerelease version: $VERSION"
+              exit 1
+            fi
+            echo "channel=stable" >> "$GITHUB_OUTPUT"
+          else
+            CHANNEL=$(node -e "const version=require('./package.json').version; const match=version.match(/-(alpha|beta|rc)\\./); if(match===null){process.exit(1);} console.log(match[1]);")
+            if [ "$CHANNEL" != "${{ inputs.bump }}" ]; then
+              echo "::error::Current version channel ($CHANNEL) does not match requested channel (${{ inputs.bump }})"
+              exit 1
+            fi
+            echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
           fi
+          TAG="v${VERSION}"
+          echo "release_kind=${RELEASE_KIND}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Rebuild names data
         if: inputs.rebuild
@@ -81,14 +111,6 @@ jobs:
 
       - name: Run coverage
         run: npm run coverage
-
-      - name: Get version and tag
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Fail if tag exists
         run: |
@@ -114,7 +136,9 @@ jobs:
 
       - name: Pack release artifact
         id: pack
-        run: echo "file=$(npm pack)" >> "$GITHUB_OUTPUT"
+        run: |
+          FILE=$(npm pack | tail -n 1)
+          echo "file=${FILE}" >> "$GITHUB_OUTPUT"
 
       - name: Create tag
         run: git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
@@ -133,12 +157,20 @@ jobs:
           file: coverage/lcov.info
           fail-on-error: false
 
-      - name: Publish to npm
+      - name: Publish stable to npm
+        if: steps.version.outputs.release_kind == 'stable'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --tag latest
 
+      - name: Publish prerelease to npm
+        if: steps.version.outputs.release_kind == 'prerelease'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --tag next
+
       - name: Create GitHub release
+        if: steps.version.outputs.release_kind == 'stable'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -146,3 +178,14 @@ jobs:
             "./${{ steps.pack.outputs.file }}" \
             --title "${{ steps.version.outputs.tag }}" \
             --generate-notes
+
+      - name: Create GitHub prerelease
+        if: steps.version.outputs.release_kind == 'prerelease'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "./${{ steps.pack.outputs.file }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes \
+            --prerelease
