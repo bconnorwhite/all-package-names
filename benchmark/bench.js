@@ -2,7 +2,7 @@
 import { performance } from "node:perf_hooks";
 import { Bench } from "tinybench";
 import allPackageNames from "../build/index.js";
-import { defaultMetadataPath, readMetadata } from "../build/backend/store.js";
+import { defaultManifestPath, readManifest } from "../build/backend/store.js";
 
 async function runBench(name, fn, options = {}) {
   const bench = new Bench({
@@ -46,11 +46,10 @@ async function benchmark() {
   });
 
   const toArrayMs = await runBench("toArrayMs", async () => {
-    let arr = await allPackageNames.toArray();
-    console.log(arr.length);
+    await allPackageNames.toArray();
   });
 
-  const { since } = await readMetadata(defaultMetadataPath);
+  const { since } = await readManifest(defaultManifestPath);
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (input) => {
     const url = typeof input === "string" || input instanceof URL
