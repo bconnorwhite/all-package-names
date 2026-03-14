@@ -48,7 +48,6 @@ jobs:
         run: npm ci
 
       - name: Restore current release package
-        if: inputs.rebuild
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build && node ./build/bin/index.js bootstrap --release current
@@ -107,7 +106,6 @@ jobs:
       - name: Create release commit
         run: |
           git add package.json package-lock.json
-          git add -f data
           git commit --allow-empty -m "${{ steps.version.outputs.tag }}"
 
       - name: Get release commit SHA
