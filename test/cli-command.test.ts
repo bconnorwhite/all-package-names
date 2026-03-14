@@ -9,7 +9,7 @@ import cli, {
   hasCommand,
   streamPackageNames,
   syncCommand
-} from "../src/cli.ts";
+} from "../src/bin/index.ts";
 import {
   createManifest,
   defaultManifestPath,
