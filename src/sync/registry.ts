@@ -51,6 +51,8 @@ type GitHubReleaseResponse = {
   }[];
 };
 
+export type BootstrapRelease = "current" | "latest";
+
 export type ChangesProgress = {
   phase: "changes";
   startSince: number;
@@ -81,18 +83,6 @@ async function getJson<T extends JsonValue>(url: string): Promise<HttpResponse<T
   return {
     statusCode: response.status,
     body: await response.json() as T
-  };
-}
-
-async function getBuffer(url: string): Promise<HttpResponse<Buffer>> {
-  const response = await fetch(url, {
-    headers: {
-      accept: "application/octet-stream"
-    }
-  });
-  return {
-    statusCode: response.status,
-    body: Buffer.from(await response.arrayBuffer())
   };
 }
 
@@ -153,6 +143,13 @@ function getReleasePackageName(name: string, version: string) {
 
 function getSha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function getRepositoryInfo() {
+  return {
+    owner: process.env["GITHUB_OWNER"] ?? "bconnorwhite",
+    repo: process.env["GITHUB_REPO"] ?? "all-package-names"
+  };
 }
 
 async function readReleasePackage(buffer: Buffer, expectedVersion: string) {
@@ -398,29 +395,40 @@ export async function seedNamesFromReleaseAssets(
   options: ProgressOptions<AllDocsProgress> = {}
 ) {
   try {
-    const { name, version } = await getPackageMetadata();
-    const assetName = getReleasePackageName(name, version);
-    const response = await getBuffer(
-      `https://github.com/bconnorwhite/all-package-names/releases/download/v${version}/${assetName}`
-    );
-
-    if(response.statusCode >= 400) {
-      return await seedNamesFromAllDocs(options);
-    }
-
-    return await readReleasePackage(response.body, version);
+    const seeded = await fetchReleasePackage("current");
+    return {
+      names: seeded.names,
+      since: seeded.since
+    };
   } catch{
     return await seedNamesFromAllDocs(options);
   }
 }
 
 /**
- * Downloads and validates the latest published GitHub release package.
+ * Downloads and validates a published GitHub release package.
  */
-export async function fetchLatestReleasePackage() {
-  const owner = process.env["GITHUB_OWNER"] ?? "bconnorwhite";
-  const repo = process.env["GITHUB_REPO"] ?? "all-package-names";
-  const { name } = await getPackageMetadata();
+export async function fetchReleasePackage(release: BootstrapRelease) {
+  const { owner, repo } = getRepositoryInfo();
+  const { name, version: currentVersion } = await getPackageMetadata();
+
+  if(release === "current") {
+    const assetName = getReleasePackageName(name, currentVersion);
+    const assetResponse = await getGitHubBuffer(
+      `https://github.com/${owner}/${repo}/releases/download/v${currentVersion}/${assetName}`
+    );
+
+    if(assetResponse.statusCode >= 400) {
+      throw new Error(`Could not download ${assetName} (${String(assetResponse.statusCode)})`);
+    }
+
+    const seeded = await readReleasePackage(assetResponse.body, currentVersion);
+    return {
+      ...seeded,
+      version: currentVersion
+    };
+  }
+
   const releaseResponse = await getGitHubJson<GitHubReleaseResponse[]>(
     `https://api.github.com/repos/${owner}/${repo}/releases?per_page=1`
   );
@@ -433,11 +441,11 @@ export async function fetchLatestReleasePackage() {
     throw new Error("No GitHub releases were available to bootstrap");
   }
 
-  const release = releaseResponse.body[0];
-  if(release === undefined) {
+  const releaseInfo = releaseResponse.body[0];
+  if(releaseInfo === undefined) {
     throw new Error("No GitHub releases were available to bootstrap");
   }
-  const tagName = typeof release?.tag_name === "string" ? release.tag_name : undefined;
+  const tagName = typeof releaseInfo.tag_name === "string" ? releaseInfo.tag_name : undefined;
 
   if(tagName === undefined || !tagName.startsWith("v")) {
     throw new Error("Latest GitHub release did not have a valid tag");
@@ -445,7 +453,7 @@ export async function fetchLatestReleasePackage() {
 
   const version = tagName.slice(1);
   const assetName = getReleasePackageName(name, version);
-  const asset = release.assets?.find((value) => value?.name === assetName);
+  const asset = releaseInfo.assets?.find((value) => value?.name === assetName);
 
   if(typeof asset?.browser_download_url !== "string" || asset.browser_download_url.length === 0) {
     throw new Error(`Latest GitHub release did not include ${assetName}`);

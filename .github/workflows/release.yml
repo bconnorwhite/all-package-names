@@ -47,11 +47,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Download current release assets
+      - name: Restore current release package
         if: inputs.rebuild
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node ./scripts/download-latest-release.mjs
+        run: npm run build && node ./build/bin/index.js bootstrap --release current
 
       - name: Bump version
         if: inputs.bump != 'none'

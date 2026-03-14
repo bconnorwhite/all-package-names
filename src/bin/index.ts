@@ -1,10 +1,11 @@
 #!/usr/bin/env node
+/* eslint-disable import/no-relative-parent-imports */
 import { pathToFileURL } from "node:url";
 import clee, { parseString } from "clee";
 import ora from "ora";
 import allPackageNames from "../index.ts";
 import { bootstrapNames, syncNames } from "../sync/index.ts";
-import type { SyncProgress } from "../sync/registry.ts";
+import type { BootstrapRelease, SyncProgress } from "../sync/registry.ts";
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
@@ -30,6 +31,18 @@ function formatSyncProgress(progress: SyncProgress) {
   }
 
   return `Applying changes: since ${formatNumber(progress.currentSince)} / ${formatNumber(progress.targetSince)} (${formatNumber(progress.processedChanges)} changes processed)`;
+}
+
+function parseBootstrapRelease(value: string | undefined): BootstrapRelease {
+  if(value === undefined) {
+    return "latest";
+  }
+
+  if(value === "current" || value === "latest") {
+    return value;
+  }
+
+  throw new Error(`Invalid release selector: ${value}`);
 }
 
 export const hasCommand = clee("has")
@@ -71,8 +84,11 @@ export const syncCommand = clee("sync")
 export const bootstrapCommand = clee("bootstrap")
   .cwd()
   .description("Restore the local dataset from the latest GitHub release")
-  .action(async () => {
-    return formatBootstrapResult(await bootstrapNames());
+  .option("-r", "--release", "[release]", "Use latest or current GitHub release", parseBootstrapRelease)
+  .action(async (options) => {
+    return formatBootstrapResult(await bootstrapNames({
+      release: options.release ?? "latest"
+    }));
   });
 
 export async function streamPackageNames(

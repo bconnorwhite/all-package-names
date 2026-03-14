@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { afterEach, test } from "node:test";
 import mock, { restore } from "mock-fs";
 import {
+  fetchReleasePackage,
   fetchChangesSince,
   fetchReplicationHead,
   seedNamesFromReleaseAssets
@@ -206,6 +207,27 @@ test("seedNamesFromReleaseAssets downloads and validates the release package", a
 
   const result = await seedNamesFromReleaseAssets();
 
+  assert.equal(result.since, 123);
+  assert.deepEqual([...result.names].sort(), ["react", "read"]);
+});
+
+test("fetchReleasePackage downloads the current version package", async () => {
+  const { url: releaseAssetUrl, version } = await getReleaseAssetUrl();
+  const releaseAsset = await createReleasePackageBuffer(version, ["react", "read"], 123);
+
+  globalThis.fetch = ((input) => {
+    const url = getUrl(input);
+
+    if(url === releaseAssetUrl) {
+      return Promise.resolve(bufferResponse(200, releaseAsset));
+    }
+
+    throw new Error(`Unexpected request: ${url}`);
+  }) as typeof fetch;
+
+  const result = await fetchReleasePackage("current");
+
+  assert.equal(result.version, version);
   assert.equal(result.since, 123);
   assert.deepEqual([...result.names].sort(), ["react", "read"]);
 });

@@ -12,10 +12,10 @@ import {
 } from "../backend/store.ts";
 import {
   fetchChangesSince,
-  fetchLatestReleasePackage,
+  fetchReleasePackage,
   seedNamesFromReleaseAssets
 } from "./registry.ts";
-import type { SyncProgress } from "./registry.ts";
+import type { BootstrapRelease, SyncProgress } from "./registry.ts";
 
 const syncLock = getLock();
 
@@ -45,6 +45,7 @@ export type SyncResult = {
 export type BootstrapOptions = {
   namesPath?: string;
   manifestPath?: string;
+  release?: BootstrapRelease;
 };
 
 /**
@@ -68,7 +69,7 @@ function uniqueSortedNames(names: Iterable<string>) {
 export async function bootstrapNames(options: BootstrapOptions = {}): Promise<BootstrapResult> {
   const namesPath = options.namesPath ?? defaultNamesPath;
   const manifestPath = options.manifestPath ?? defaultManifestPath;
-  const seeded = await fetchLatestReleasePackage();
+  const seeded = await fetchReleasePackage(options.release ?? "latest");
   const names = uniqueSortedNames(seeded.names);
   const manifest = createManifest(names, seeded.since);
 

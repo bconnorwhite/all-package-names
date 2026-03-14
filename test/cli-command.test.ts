@@ -163,7 +163,9 @@ test("bootstrap command restores the latest release package and prints a summary
     throw new Error(`Unexpected request: ${url}`);
   }) as typeof fetch;
 
-  const result = await bootstrapCommand();
+  const result = await bootstrapCommand({
+    release: "latest"
+  });
 
   assert.match(result, /^Bootstrapped package names from 3\.0\.0-rc\.1: since=20 count=2$/);
   assert.deepEqual(await readNamesFile(defaultNamesPath), ["alpha", "beta"]);
