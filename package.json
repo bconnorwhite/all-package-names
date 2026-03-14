@@ -32,6 +32,9 @@
     ".": "./build/index.js"
   },
   "types": "./build/index.d.ts",
+  "bin": {
+    "all-package-names": "./build/bin/index.js"
+  },
   "files": [
     "build/**/!(tsconfig.tsbuildinfo)",
     "data"
@@ -41,18 +44,20 @@
   },
   "scripts": {
     "bench": "npm run build && node ./benchmark/bench.js",
-    "bootstrap": "node ./scripts/bootstrap-from-release.mjs",
-    "build": "rimraf ./build && tsc --project ./tsconfig.json",
+    "bootstrap": "npm run build && node ./build/bin/index.js bootstrap",
+    "build": "rimraf ./build && tsc --project ./tsconfig.json && chmod +x ./build/bin/index.js",
     "coverage": "c8 --reporter=text --reporter=lcovonly node --test ./test/*.test.ts",
     "lint": "npm run lint:package && npm run lint:source",
     "lint:package": "npmPkgJsonLint .",
     "lint:source": "ESLINT_USE_FLAT_CONFIG=false eslint src test --ext .ts",
     "prepack": "npm run build",
-    "sync": "npm run build && node ./scripts/sync.mjs",
+    "release": "npm publish",
+    "sync": "npm run build && node ./build/bin/index.js sync",
     "test": "node --test ./test/*.test.ts",
     "typecheck": "npm run build && tsc --project ./test/tsconfig.json"
   },
   "dependencies": {
+    "clee": "^0.2.9",
     "file-exists-safe": "^3.0.0",
     "p-lock": "^4.0.0",
     "read-json-safe": "^3.0.0",

@@ -42,6 +42,14 @@ type ManifestResponse = {
   namesSha256?: string;
 };
 
+type GitHubReleaseResponse = {
+  tag_name?: string;
+  assets?: {
+    name?: string;
+    browser_download_url?: string;
+  }[];
+};
+
 async function getJson<T extends JsonValue>(url: string): Promise<HttpResponse<T>> {
   const response = await fetch(url, {
     headers: {
@@ -58,6 +66,38 @@ async function getBuffer(url: string): Promise<HttpResponse<Buffer>> {
   const response = await fetch(url, {
     headers: {
       accept: "application/octet-stream"
+    }
+  });
+  return {
+    statusCode: response.status,
+    body: Buffer.from(await response.arrayBuffer())
+  };
+}
+
+async function getGitHubJson<T extends JsonValue>(url: string): Promise<HttpResponse<T>> {
+  const token = process.env["GITHUB_TOKEN"];
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      ...(token === undefined ? {} : {
+        authorization: `Bearer ${token}`
+      })
+    }
+  });
+  return {
+    statusCode: response.status,
+    body: await response.json() as T
+  };
+}
+
+async function getGitHubBuffer(url: string): Promise<HttpResponse<Buffer>> {
+  const token = process.env["GITHUB_TOKEN"];
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/octet-stream",
+      ...(token === undefined ? {} : {
+        authorization: `Bearer ${token}`
+      })
     }
   });
   return {
@@ -298,4 +338,54 @@ export async function seedNamesFromReleaseAssets() {
   } catch{
     return await seedNamesFromAllDocs();
   }
+}
+
+/**
+ * Downloads and validates the latest published GitHub release package.
+ */
+export async function fetchLatestReleasePackage() {
+  const owner = process.env["GITHUB_OWNER"] ?? "bconnorwhite";
+  const repo = process.env["GITHUB_REPO"] ?? "all-package-names";
+  const { name } = await getPackageMetadata();
+  const releaseResponse = await getGitHubJson<GitHubReleaseResponse[]>(
+    `https://api.github.com/repos/${owner}/${repo}/releases?per_page=1`
+  );
+
+  if(releaseResponse.statusCode >= 400) {
+    throw new Error(`Could not fetch GitHub releases (${String(releaseResponse.statusCode)})`);
+  }
+
+  if(!Array.isArray(releaseResponse.body) || releaseResponse.body.length === 0) {
+    throw new Error("No GitHub releases were available to bootstrap");
+  }
+
+  const release = releaseResponse.body[0];
+  if(release === undefined) {
+    throw new Error("No GitHub releases were available to bootstrap");
+  }
+  const tagName = typeof release?.tag_name === "string" ? release.tag_name : undefined;
+
+  if(tagName === undefined || !tagName.startsWith("v")) {
+    throw new Error("Latest GitHub release did not have a valid tag");
+  }
+
+  const version = tagName.slice(1);
+  const assetName = getReleasePackageName(name, version);
+  const asset = release.assets?.find((value) => value?.name === assetName);
+
+  if(typeof asset?.browser_download_url !== "string" || asset.browser_download_url.length === 0) {
+    throw new Error(`Latest GitHub release did not include ${assetName}`);
+  }
+
+  const assetResponse = await getGitHubBuffer(asset.browser_download_url);
+
+  if(assetResponse.statusCode >= 400) {
+    throw new Error(`Could not download ${assetName} (${String(assetResponse.statusCode)})`);
+  }
+
+  const seeded = await readReleasePackage(assetResponse.body, version);
+  return {
+    ...seeded,
+    version
+  };
 }

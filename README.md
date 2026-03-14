@@ -79,6 +79,8 @@ bun add all-package-names
 
 > Uses binary search on the underlying dataset to quickly check for existence or iterate over packages with a given prefix without having to load the entire list into memory. However, the full list can also be loaded as a string array.
 
+## API
+
 Check if a package exists without loading the full array:
 
 ```ts
@@ -113,6 +115,50 @@ import allPackageNames from "all-package-names";
 const result = await allPackageNames.refresh();
 
 console.log(result);
+```
+
+## CLI
+
+```
+Stream, query, and maintain the all-package-names dataset
+
+Usage: all-package-names [options] [command]
+
+Options:
+  -p, --prefix [prefix]  Only output package names with this prefix
+  -v, --version          Display version
+  -h, --help             Display help for command
+
+Commands:
+  has <name>             Check whether a package name exists
+  sync                   Sync the local dataset from the npm replication feed
+  bootstrap              Restore the local dataset from the latest GitHub release
+```
+
+Stream every package name, one per line:
+
+```sh
+all-package-names
+```
+
+Only stream names with a given prefix:
+
+```sh
+all-package-names --prefix @types/
+```
+
+This is useful for piping to other programs, for example:
+
+```sh
+all-package-names --prefix @types/ | grep react
+```
+
+**has**
+
+Check whether a package exists with the `has` subcommand:
+
+```sh
+all-package-names has react
 ```
 
 <!--BEGIN FOOTER-->

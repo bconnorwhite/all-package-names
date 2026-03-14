@@ -69,7 +69,7 @@ export async function readManifest(path: string): Promise<Manifest> {
 }
 
 export async function writeManifest(path: string, manifest: Manifest) {
-  await writeStoreFile(path, JSON.stringify(manifest));
+  await writeStoreFile(path, JSON.stringify(manifest, null, 2));
 }
 
 export async function ensureStoreFiles(namesPath = defaultNamesPath, manifestPath = defaultManifestPath) {

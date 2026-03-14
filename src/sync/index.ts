@@ -10,7 +10,7 @@ import {
   writeManifest,
   writeNamesFile
 } from "../backend/store.ts";
-import { fetchChangesSince, seedNamesFromReleaseAssets } from "./registry.ts";
+import { fetchChangesSince, fetchLatestReleasePackage, seedNamesFromReleaseAssets } from "./registry.ts";
 
 const syncLock = getLock();
 
@@ -33,10 +33,49 @@ export type SyncResult = {
   processedChanges: number;
 };
 
+/**
+ * Options for restoring a custom package-name store from the latest release.
+ */
+export type BootstrapOptions = {
+  namesPath?: string;
+  manifestPath?: string;
+};
+
+/**
+ * Summary returned after restoring the local store from the latest release.
+ */
+export type BootstrapResult = {
+  version: string;
+  since: number;
+  count: number;
+};
+
 function uniqueSortedNames(names: Iterable<string>) {
   const values = Array.from(names).filter((name) => name.length > 0);
   values.sort();
   return values.filter((name, index) => index === 0 || name !== values[index - 1]);
+}
+
+/**
+ * Restores the local store from the latest published GitHub release.
+ */
+export async function bootstrapNames(options: BootstrapOptions = {}): Promise<BootstrapResult> {
+  const namesPath = options.namesPath ?? defaultNamesPath;
+  const manifestPath = options.manifestPath ?? defaultManifestPath;
+  const seeded = await fetchLatestReleasePackage();
+  const names = uniqueSortedNames(seeded.names);
+  const manifest = createManifest(names, seeded.since);
+
+  await Promise.all([
+    writeNamesFile(namesPath, names),
+    writeManifest(manifestPath, manifest)
+  ]);
+
+  return {
+    version: seeded.version,
+    since: seeded.since,
+    count: names.length
+  };
 }
 
 /**
