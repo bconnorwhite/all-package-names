@@ -59,6 +59,7 @@
   "dependencies": {
     "clee": "^0.2.9",
     "file-exists-safe": "^3.0.0",
+    "ora": "^8.2.0",
     "p-lock": "^4.0.0",
     "read-json-safe": "^3.0.0",
     "tar": "^7.4.3"

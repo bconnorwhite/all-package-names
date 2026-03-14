@@ -89,6 +89,15 @@ test("sync command prints a summary and updates the default store", async () => 
       ? input.toString()
       : input.url;
 
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({
+          update_seq: 11
+        })
+      } as Response);
+    }
+
     if(url !== "https://replicate.npmjs.com/registry/_changes?since=10&limit=10000") {
       throw new Error(`Unexpected request: ${url}`);
     }

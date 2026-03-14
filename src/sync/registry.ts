@@ -31,6 +31,7 @@ type ChangesResponse = {
 };
 
 type AllDocsResponse = {
+  total_rows?: number;
   rows: {
     id: string;
   }[];
@@ -48,6 +49,27 @@ type GitHubReleaseResponse = {
     name?: string;
     browser_download_url?: string;
   }[];
+};
+
+export type ChangesProgress = {
+  phase: "changes";
+  startSince: number;
+  currentSince: number;
+  targetSince: number;
+  processedChanges: number;
+};
+
+export type AllDocsProgress = {
+  phase: "all_docs";
+  processedRows: number;
+  syncedNames: number;
+  totalRows?: number;
+};
+
+export type SyncProgress = ChangesProgress | AllDocsProgress;
+
+type ProgressOptions<T extends SyncProgress> = {
+  onProgress?: (progress: T) => void;
 };
 
 async function getJson<T extends JsonValue>(url: string): Promise<HttpResponse<T>> {
@@ -228,15 +250,35 @@ async function fetchChangesPage(since: number) {
 /**
  * Accumulates replication changes from the provided sequence onward.
  */
-export async function fetchChangesSince(since: number) {
+export async function fetchChangesSince(
+  since: number,
+  options: ProgressOptions<ChangesProgress> = {}
+) {
   const created = new Set<string>();
   const deleted = new Set<string>();
+  const targetSince = await fetchReplicationHead();
   let cursor = since;
   let processedChanges = 0;
+
+  options.onProgress?.({
+    phase: "changes",
+    startSince: since,
+    currentSince: since,
+    targetSince,
+    processedChanges
+  });
 
   while(true) {
     const page = await fetchChangesPage(cursor);
     processedChanges += page.results.length;
+
+    options.onProgress?.({
+      phase: "changes",
+      startSince: since,
+      currentSince: page.since,
+      targetSince,
+      processedChanges
+    });
 
     for(const item of page.results) {
       if(!item.id.startsWith("_")) {
@@ -269,8 +311,12 @@ export async function fetchChangesSince(since: number) {
  * Relevant discussion of supported replication queries:
  * https://github.com/orgs/community/discussions/152515
  */
-export async function seedNamesFromAllDocs() {
+export async function seedNamesFromAllDocs(
+  options: ProgressOptions<AllDocsProgress> = {}
+) {
   const names = new Set<string>();
+  let processedRows = 0;
+  let totalRows: number | undefined;
   let startKey: string | undefined;
 
   while(true) {
@@ -285,9 +331,20 @@ export async function seedNamesFromAllDocs() {
       throw new Error(`Could not fetch _all_docs bootstrap (${String(response.statusCode)})`);
     }
 
+    if(typeof response.body.total_rows === "number" && Number.isFinite(response.body.total_rows)) {
+      totalRows = response.body.total_rows;
+    }
+
     if(!Array.isArray(response.body.rows) || response.body.rows.length === 0) {
       break;
     }
+
+    const pageRows = startKey !== undefined
+      && response.body.rows[0]?.id === startKey
+      ? response.body.rows.length - 1
+      : response.body.rows.length;
+
+    processedRows += Math.max(pageRows, 0);
 
     let addedThisPage = 0;
     for(const row of response.body.rows) {
@@ -298,6 +355,15 @@ export async function seedNamesFromAllDocs() {
           addedThisPage += 1;
         }
       }
+    }
+
+    if(pageRows > 0) {
+      options.onProgress?.({
+        phase: "all_docs",
+        processedRows,
+        syncedNames: names.size,
+        totalRows
+      });
     }
 
     if(addedThisPage === 0) {
@@ -322,7 +388,9 @@ export async function seedNamesFromAllDocs() {
  * Seeds the local dataset from the current package version's GitHub release assets,
  * falling back to `_all_docs` if those assets are unavailable or invalid.
  */
-export async function seedNamesFromReleaseAssets() {
+export async function seedNamesFromReleaseAssets(
+  options: ProgressOptions<AllDocsProgress> = {}
+) {
   try {
     const { name, version } = await getPackageMetadata();
     const assetName = getReleasePackageName(name, version);
@@ -331,12 +399,12 @@ export async function seedNamesFromReleaseAssets() {
     );
 
     if(response.statusCode >= 400) {
-      return await seedNamesFromAllDocs();
+      return await seedNamesFromAllDocs(options);
     }
 
     return await readReleasePackage(response.body, version);
   } catch{
-    return await seedNamesFromAllDocs();
+    return await seedNamesFromAllDocs(options);
   }
 }
 

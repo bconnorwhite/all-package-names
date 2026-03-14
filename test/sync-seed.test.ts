@@ -46,6 +46,15 @@ test("syncNames seeds from release assets when the local names file is empty", a
       ? input.toString()
       : input.url;
 
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({
+          update_seq: 22
+        })
+      } as Response);
+    }
+
     if(url === releaseAssetUrl) {
       return Promise.resolve({
         status: 200,

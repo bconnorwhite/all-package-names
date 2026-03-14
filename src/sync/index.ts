@@ -10,7 +10,12 @@ import {
   writeManifest,
   writeNamesFile
 } from "../backend/store.ts";
-import { fetchChangesSince, fetchLatestReleasePackage, seedNamesFromReleaseAssets } from "./registry.ts";
+import {
+  fetchChangesSince,
+  fetchLatestReleasePackage,
+  seedNamesFromReleaseAssets
+} from "./registry.ts";
+import type { SyncProgress } from "./registry.ts";
 
 const syncLock = getLock();
 
@@ -20,6 +25,7 @@ const syncLock = getLock();
 export type SyncOptions = {
   namesPath?: string;
   manifestPath?: string;
+  onProgress?: (progress: SyncProgress) => void;
 };
 
 /**
@@ -93,12 +99,16 @@ export async function syncNames(options: SyncOptions = {}): Promise<SyncResult> 
       let manifest = await readManifest(manifestPath);
 
       if(names.length === 0) {
-        const seeded = await seedNamesFromReleaseAssets();
+        const seeded = await seedNamesFromReleaseAssets({
+          onProgress: options.onProgress
+        });
         names = uniqueSortedNames(seeded.names);
         manifest = createManifest(names, seeded.since);
       }
 
-      const changes = await fetchChangesSince(manifest.since);
+      const changes = await fetchChangesSince(manifest.since, {
+        onProgress: options.onProgress
+      });
       const set = new Set(names);
 
       for(const name of changes.deleted) {

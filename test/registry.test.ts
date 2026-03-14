@@ -76,6 +76,7 @@ test("fetchReplicationHead throws for HTTP errors", async () => {
 });
 
 test("fetchChangesSince paginates and coalesces create/delete changes", async () => {
+  const progress: unknown[] = [];
   const firstPage = [
     { id: "alpha", seq: 11 },
     { id: "beta", seq: 12, deleted: true },
@@ -88,6 +89,12 @@ test("fetchChangesSince paginates and coalesces create/delete changes", async ()
 
   globalThis.fetch = ((input) => {
     const url = getUrl(input);
+
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve(jsonResponse(200, {
+        update_seq: 20000
+      }));
+    }
 
     if(url === "https://replicate.npmjs.com/registry/_changes?since=10&limit=10000") {
       return Promise.resolve(jsonResponse(200, {
@@ -110,28 +117,75 @@ test("fetchChangesSince paginates and coalesces create/delete changes", async ()
     throw new Error(`Unexpected JSON request: ${url}`);
   }) as typeof fetch;
 
-  const result = await fetchChangesSince(10);
+  const result = await fetchChangesSince(10, {
+    onProgress(value) {
+      progress.push(value);
+    }
+  });
 
   assert.equal(result.since, 10013);
   assert.equal(result.processedChanges, 10003);
   assert.deepEqual([...result.created], ["beta"]);
   assert.deepEqual([...result.deleted], ["alpha"]);
+  assert.deepEqual(progress, [
+    {
+      phase: "changes",
+      startSince: 10,
+      currentSince: 10,
+      targetSince: 20000,
+      processedChanges: 0
+    },
+    {
+      phase: "changes",
+      startSince: 10,
+      currentSince: 10010,
+      targetSince: 20000,
+      processedChanges: 10000
+    },
+    {
+      phase: "changes",
+      startSince: 10,
+      currentSince: 10013,
+      targetSince: 20000,
+      processedChanges: 10003
+    }
+  ]);
 });
 
 test("fetchChangesSince throws when the response is malformed", async () => {
-  globalThis.fetch = (() => Promise.resolve(jsonResponse(200, {
-    results: null,
-    last_seq: 1
-  }))) as typeof fetch;
+  globalThis.fetch = ((input) => {
+    const url = getUrl(input);
+
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve(jsonResponse(200, {
+        update_seq: 1
+      }));
+    }
+
+    return Promise.resolve(jsonResponse(200, {
+      results: null,
+      last_seq: 1
+    }));
+  }) as typeof fetch;
 
   await assert.rejects(fetchChangesSince(0), /Replication feed response did not include results/);
 });
 
 test("fetchChangesSince throws for HTTP errors", async () => {
-  globalThis.fetch = (() => Promise.resolve(jsonResponse(500, {
-    results: [],
-    last_seq: 0
-  }))) as typeof fetch;
+  globalThis.fetch = ((input) => {
+    const url = getUrl(input);
+
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve(jsonResponse(200, {
+        update_seq: 0
+      }));
+    }
+
+    return Promise.resolve(jsonResponse(500, {
+      results: [],
+      last_seq: 0
+    }));
+  }) as typeof fetch;
 
   await assert.rejects(fetchChangesSince(0), /Could not fetch replication changes \(500\)/);
 });
@@ -163,6 +217,7 @@ test("seedNamesFromReleaseAssets falls back to _all_docs when the release packag
       namesSha256: "invalid"
     }
   });
+  const progress: unknown[] = [];
 
   globalThis.fetch = ((input) => {
     const url = getUrl(input);
@@ -173,6 +228,7 @@ test("seedNamesFromReleaseAssets falls back to _all_docs when the release packag
 
     if(url === "https://replicate.npmjs.com/registry/_all_docs?limit=10000") {
       return Promise.resolve(jsonResponse(200, {
+        total_rows: 3,
         rows: [
           { id: "alpha" },
           { id: "_design/ignored" },
@@ -198,10 +254,22 @@ test("seedNamesFromReleaseAssets falls back to _all_docs when the release packag
     throw new Error(`Unexpected request: ${url}`);
   }) as typeof fetch;
 
-  const result = await seedNamesFromReleaseAssets();
+  const result = await seedNamesFromReleaseAssets({
+    onProgress(value) {
+      progress.push(value);
+    }
+  });
 
   assert.equal(result.since, 456);
   assert.deepEqual([...result.names], ["alpha", "beta"]);
+  assert.deepEqual(progress, [
+    {
+      phase: "all_docs",
+      processedRows: 3,
+      syncedNames: 2,
+      totalRows: 3
+    }
+  ]);
 });
 
 test("seedNamesFromReleaseAssets falls back to _all_docs when the release package is missing", async () => {

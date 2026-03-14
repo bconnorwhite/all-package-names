@@ -19,6 +19,8 @@ afterEach(() => {
 });
 
 test("syncNames uses the default store paths when no options are provided", async () => {
+  const progress: unknown[] = [];
+
   mock({
     [defaultNamesPath]: JSON.stringify(["alpha"]),
     [defaultManifestPath]: JSON.stringify(createManifest(["alpha"], 10))
@@ -28,6 +30,15 @@ test("syncNames uses the default store paths when no options are provided", asyn
     const url = typeof input === "string" || input instanceof URL
       ? input.toString()
       : input.url;
+
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({
+          update_seq: 11
+        })
+      } as Response);
+    }
 
     if(url !== "https://replicate.npmjs.com/registry/_changes?since=10&limit=10000") {
       throw new Error(`Unexpected JSON request: ${url}`);
@@ -44,7 +55,11 @@ test("syncNames uses the default store paths when no options are provided", asyn
     } as Response);
   }) as typeof fetch;
 
-  const result = await syncNames();
+  const result = await syncNames({
+    onProgress(value) {
+      progress.push(value);
+    }
+  });
 
   assert.deepEqual(result, {
     since: 11,
@@ -55,4 +70,20 @@ test("syncNames uses the default store paths when no options are provided", asyn
   });
   assert.deepEqual(await readNamesFile(defaultNamesPath), ["alpha", "beta"]);
   assert.deepEqual(await readManifest(defaultManifestPath), createManifest(["alpha", "beta"], 11));
+  assert.deepEqual(progress, [
+    {
+      phase: "changes",
+      startSince: 10,
+      currentSince: 10,
+      targetSince: 11,
+      processedChanges: 0
+    },
+    {
+      phase: "changes",
+      startSince: 10,
+      currentSince: 11,
+      targetSince: 11,
+      processedChanges: 1
+    }
+  ]);
 });

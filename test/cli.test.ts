@@ -29,6 +29,15 @@ test("syncNames updates files and returns a summary", async () => {
       ? input.toString()
       : input.url;
 
+    if(url === "https://replicate.npmjs.com/") {
+      return Promise.resolve({
+        status: 200,
+        json: () => Promise.resolve({
+          update_seq: 11
+        })
+      } as Response);
+    }
+
     if(url !== "https://replicate.npmjs.com/registry/_changes?since=10&limit=10000") {
       throw new Error(`Unexpected JSON request: ${url}`);
     }
