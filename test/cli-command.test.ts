@@ -22,7 +22,6 @@ import { createReleasePackageBuffer } from "./helpers.ts";
 const originalFetch = globalThis.fetch;
 const latestReleaseUrl = "https://api.github.com/repos/bconnorwhite/all-package-names/releases?per_page=1";
 const packageJsonPath = fileURLToPath(new URL("../package.json", import.meta.url));
-const packageJsonTextPromise = readFile(packageJsonPath, "utf8");
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -121,8 +120,10 @@ test("sync command prints a summary and updates the default store", async () => 
 });
 
 test("bootstrap command restores the latest release package and prints a summary", async () => {
+  const packageJsonText = await readFile(packageJsonPath, "utf8");
+
   mock({
-    [packageJsonPath]: await packageJsonTextPromise,
+    [packageJsonPath]: packageJsonText,
     [defaultNamesPath]: JSON.stringify([]),
     [defaultManifestPath]: JSON.stringify(createManifest([], 0))
   });
