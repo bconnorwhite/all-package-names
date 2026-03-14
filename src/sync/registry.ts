@@ -256,29 +256,35 @@ export async function fetchChangesSince(
 ) {
   const created = new Set<string>();
   const deleted = new Set<string>();
-  const targetSince = await fetchReplicationHead();
+  const targetSince = options.onProgress === undefined
+    ? undefined
+    : await fetchReplicationHead();
   let cursor = since;
   let processedChanges = 0;
 
-  options.onProgress?.({
-    phase: "changes",
-    startSince: since,
-    currentSince: since,
-    targetSince,
-    processedChanges
-  });
+  if(targetSince !== undefined) {
+    options.onProgress?.({
+      phase: "changes",
+      startSince: since,
+      currentSince: since,
+      targetSince,
+      processedChanges
+    });
+  }
 
   while(true) {
     const page = await fetchChangesPage(cursor);
     processedChanges += page.results.length;
 
-    options.onProgress?.({
-      phase: "changes",
-      startSince: since,
-      currentSince: page.since,
-      targetSince,
-      processedChanges
-    });
+    if(targetSince !== undefined) {
+      options.onProgress?.({
+        phase: "changes",
+        startSince: since,
+        currentSince: page.since,
+        targetSince,
+        processedChanges
+      });
+    }
 
     for(const item of page.results) {
       if(!item.id.startsWith("_")) {
