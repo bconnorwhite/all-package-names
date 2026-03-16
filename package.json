@@ -1,6 +1,6 @@
 {
   "name": "all-package-names",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Fast lookup and iteration over all NPM package names",
   "license": "MIT",
   "private": false,
